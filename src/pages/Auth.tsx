@@ -37,6 +37,17 @@ const adminSignInSchema = z.object({
   password: z.string().min(1, "Password is required"),
 });
 
+const adminSignUpSchema = z.object({
+  name: z.string().trim().min(2, "Name must be at least 2 characters").max(100, "Name must be less than 100 characters"),
+  email: z.string().email("Invalid email address").max(255, "Email must be less than 255 characters"),
+  password: z.string()
+    .min(8, "Password must be at least 8 characters")
+    .max(100, "Password must be less than 100 characters")
+    .regex(/[A-Z]/, "Password must contain at least one uppercase letter")
+    .regex(/[a-z]/, "Password must contain at least one lowercase letter")
+    .regex(/[0-9]/, "Password must contain at least one number"),
+});
+
 const Auth = () => {
   const navigate = useNavigate();
   const { toast } = useToast();
@@ -59,6 +70,12 @@ const Auth = () => {
   });
 
   const [adminSignInData, setAdminSignInData] = useState({
+    email: "",
+    password: "",
+  });
+
+  const [adminSignUpData, setAdminSignUpData] = useState({
+    name: "",
     email: "",
     password: "",
   });
@@ -174,6 +191,49 @@ const Auth = () => {
     toast({
       title: "Admin Login Successful",
       description: "Welcome back, Admin!",
+    });
+    
+    navigate("/admin");
+  };
+
+  const handleAdminSignUp = async (e: React.FormEvent) => {
+    e.preventDefault();
+    
+    // Validate with zod schema
+    const validationResult = adminSignUpSchema.safeParse(adminSignUpData);
+    
+    if (!validationResult.success) {
+      const firstError = validationResult.error.errors[0];
+      toast({
+        title: "Validation Error",
+        description: firstError.message,
+        variant: "destructive",
+      });
+      return;
+    }
+
+    setLoading(true);
+    const { error } = await signUp(adminSignUpData.email, adminSignUpData.password, {
+      name: adminSignUpData.name,
+      mobile: "",
+      year: "",
+      is_admin: true,
+    });
+
+    setLoading(false);
+
+    if (error) {
+      toast({
+        title: "Signup Error",
+        description: error.message,
+        variant: "destructive",
+      });
+      return;
+    }
+
+    toast({
+      title: "Admin Account Created",
+      description: "Admin account created successfully. You're now logged in!",
     });
     
     navigate("/admin");
@@ -344,36 +404,92 @@ const Auth = () => {
                 </TabsContent>
               </Tabs>
               ) : (
-                <form onSubmit={handleAdminSignIn} className="space-y-4 mt-6">
-                  <div className="space-y-2">
-                    <Label htmlFor="admin-email">Admin Email</Label>
-                    <Input
-                      id="admin-email"
-                      type="email"
-                      placeholder="Enter admin email"
-                      value={adminSignInData.email}
-                      onChange={(e) => setAdminSignInData({ ...adminSignInData, email: e.target.value })}
-                      required
-                    />
-                  </div>
+                <Tabs defaultValue="signin" className="mt-4">
+                  <TabsList className="grid w-full grid-cols-2">
+                    <TabsTrigger value="signin">Sign In</TabsTrigger>
+                    <TabsTrigger value="signup">Sign Up</TabsTrigger>
+                  </TabsList>
 
-                  <div className="space-y-2">
-                    <Label htmlFor="admin-password">Admin Password</Label>
-                    <Input
-                      id="admin-password"
-                      type="password"
-                      placeholder="Enter admin password"
-                      value={adminSignInData.password}
-                      onChange={(e) => setAdminSignInData({ ...adminSignInData, password: e.target.value })}
-                      required
-                    />
-                  </div>
+                  <TabsContent value="signin">
+                    <form onSubmit={handleAdminSignIn} className="space-y-4 mt-4">
+                      <div className="space-y-2">
+                        <Label htmlFor="admin-signin-email">Admin Email</Label>
+                        <Input
+                          id="admin-signin-email"
+                          type="email"
+                          placeholder="Enter admin email"
+                          value={adminSignInData.email}
+                          onChange={(e) => setAdminSignInData({ ...adminSignInData, email: e.target.value })}
+                          required
+                        />
+                      </div>
 
-                  <Button type="submit" className="w-full group" size="lg" disabled={loading}>
-                    {loading ? "Signing in..." : "Admin Sign In"}
-                    <ArrowRight className="w-4 h-4 ml-2 group-hover:translate-x-1 transition-transform" />
-                  </Button>
-                </form>
+                      <div className="space-y-2">
+                        <Label htmlFor="admin-signin-password">Admin Password</Label>
+                        <Input
+                          id="admin-signin-password"
+                          type="password"
+                          placeholder="Enter admin password"
+                          value={adminSignInData.password}
+                          onChange={(e) => setAdminSignInData({ ...adminSignInData, password: e.target.value })}
+                          required
+                        />
+                      </div>
+
+                      <Button type="submit" className="w-full group" size="lg" disabled={loading}>
+                        {loading ? "Signing in..." : "Admin Sign In"}
+                        <ArrowRight className="w-4 h-4 ml-2 group-hover:translate-x-1 transition-transform" />
+                      </Button>
+                    </form>
+                  </TabsContent>
+
+                  <TabsContent value="signup">
+                    <form onSubmit={handleAdminSignUp} className="space-y-4 mt-4">
+                      <div className="space-y-2">
+                        <Label htmlFor="admin-name">Full Name</Label>
+                        <Input
+                          id="admin-name"
+                          placeholder="Enter admin full name"
+                          value={adminSignUpData.name}
+                          onChange={(e) => setAdminSignUpData({ ...adminSignUpData, name: e.target.value })}
+                          required
+                        />
+                      </div>
+
+                      <div className="space-y-2">
+                        <Label htmlFor="admin-signup-email">Admin Email</Label>
+                        <Input
+                          id="admin-signup-email"
+                          type="email"
+                          placeholder="Enter admin email"
+                          value={adminSignUpData.email}
+                          onChange={(e) => setAdminSignUpData({ ...adminSignUpData, email: e.target.value })}
+                          required
+                        />
+                      </div>
+
+                      <div className="space-y-2">
+                        <Label htmlFor="admin-signup-password">Password</Label>
+                        <Input
+                          id="admin-signup-password"
+                          type="password"
+                          placeholder="Min 8 chars, with uppercase, lowercase & number"
+                          value={adminSignUpData.password}
+                          onChange={(e) => setAdminSignUpData({ ...adminSignUpData, password: e.target.value })}
+                          required
+                        />
+                        <p className="text-xs text-muted-foreground">
+                          Must be 8+ characters with uppercase, lowercase, and number
+                        </p>
+                      </div>
+
+                      <Button type="submit" className="w-full group" size="lg" disabled={loading}>
+                        {loading ? "Creating admin account..." : "Admin Sign Up"}
+                        <ArrowRight className="w-4 h-4 ml-2 group-hover:translate-x-1 transition-transform" />
+                      </Button>
+                    </form>
+                  </TabsContent>
+                </Tabs>
               )}
             </CardContent>
           </Card>
