@@ -7,39 +7,66 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 
 const Dashboard = () => {
-  const registeredEvents = [
+  const upcomingEvents = [
     {
       id: "1",
-      title: "Technical Symposium 2025",
-      date: "March 15, 2025",
+      title: "Innovation 2k26",
+      date: "March 15, 2026",
       time: "9:00 AM",
       status: "upcoming",
-      location: "Main Auditorium",
+      location: "Main Auditorium, PESCOP",
+      category: "Technical",
     },
     {
       id: "2",
-      title: "Coding Hackathon",
-      date: "March 22, 2025",
+      title: "Kurukshetra 2k26",
+      date: "March 22, 2026",
+      time: "9:00 AM",
+      status: "upcoming",
+      location: "Main Campus, PESCOP",
+      category: "Technical",
+    },
+    {
+      id: "3",
+      title: "Technical Training Workshop",
+      date: "November 10-15, 2025",
       time: "10:00 AM",
       status: "upcoming",
+      location: "Training Center, PESCOP",
+      category: "Workshop",
+    },
+  ];
+
+  const liveEvents = [
+    {
+      id: "live-1",
+      title: "Nexus AI Build",
+      date: "November 6-7, 2025",
+      time: "10:00 AM",
+      status: "live",
       location: "Computer Lab Block A",
+      category: "Competition",
     },
   ];
 
   const pastEvents = [
     {
-      id: "3",
-      title: "AI Workshop",
-      date: "Feb 10, 2025",
+      id: "past-1",
+      title: "Innovation 2k25",
+      date: "October 9, 2025",
       status: "completed",
       certificate: true,
+      location: "Main Auditorium, PESCOP",
+      category: "Technical",
     },
     {
-      id: "4",
-      title: "Cultural Night",
-      date: "Jan 28, 2025",
+      id: "past-2",
+      title: "Kurukshetra 2k25",
+      date: "March 2025",
       status: "completed",
-      certificate: false,
+      certificate: true,
+      location: "Main Campus, PESCOP",
+      category: "Technical",
     },
   ];
 
@@ -69,19 +96,19 @@ const Dashboard = () => {
               <Calendar className="w-4 h-4 text-muted-foreground" />
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold text-primary">2</div>
+              <div className="text-2xl font-bold text-primary">{upcomingEvents.length}</div>
               <p className="text-xs text-muted-foreground">Events registered</p>
             </CardContent>
           </Card>
 
           <Card className="animate-fade-in" style={{ animationDelay: "0.1s" }}>
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">Completed</CardTitle>
-              <CheckCircle className="w-4 h-4 text-muted-foreground" />
+              <CardTitle className="text-sm font-medium">Live Events</CardTitle>
+              <Clock className="w-4 h-4 text-muted-foreground" />
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold text-accent">2</div>
-              <p className="text-xs text-muted-foreground">Events attended</p>
+              <div className="text-2xl font-bold text-accent">{liveEvents.length}</div>
+              <p className="text-xs text-muted-foreground">Events happening now</p>
             </CardContent>
           </Card>
 
@@ -91,21 +118,67 @@ const Dashboard = () => {
               <CheckCircle className="w-4 h-4 text-muted-foreground" />
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold text-primary">1</div>
+              <div className="text-2xl font-bold text-primary">{pastEvents.filter(e => e.certificate).length}</div>
               <p className="text-xs text-muted-foreground">Available to download</p>
             </CardContent>
           </Card>
         </div>
 
         {/* Events Tabs */}
-        <Tabs defaultValue="upcoming" className="animate-fade-in">
-          <TabsList className="grid w-full max-w-md grid-cols-2">
-            <TabsTrigger value="upcoming">Upcoming Events</TabsTrigger>
+        <Tabs defaultValue="live" className="animate-fade-in">
+          <TabsList className="grid w-full max-w-2xl grid-cols-3">
+            <TabsTrigger value="live">Live Events</TabsTrigger>
+            <TabsTrigger value="upcoming">Upcoming</TabsTrigger>
             <TabsTrigger value="past">Past Events</TabsTrigger>
           </TabsList>
 
+          <TabsContent value="live" className="space-y-4 mt-6">
+            {liveEvents.map((event) => (
+              <Card key={event.id} className="hover:shadow-md transition-shadow border-primary/50 bg-primary/5">
+                <CardHeader>
+                  <div className="flex items-start justify-between">
+                    <div className="space-y-1 flex-1">
+                      <CardTitle className="text-lg flex items-center gap-2">
+                        {event.title}
+                        <span className="relative flex h-3 w-3">
+                          <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-primary opacity-75"></span>
+                          <span className="relative inline-flex rounded-full h-3 w-3 bg-primary"></span>
+                        </span>
+                      </CardTitle>
+                      <CardDescription className="flex items-center gap-4 text-sm">
+                        <span className="flex items-center gap-1">
+                          <Calendar className="w-3 h-3" />
+                          {event.date}
+                        </span>
+                        <span className="flex items-center gap-1">
+                          <Clock className="w-3 h-3" />
+                          {event.time}
+                        </span>
+                      </CardDescription>
+                      <p className="text-sm text-muted-foreground">{event.location}</p>
+                      <Badge className="mt-2">{event.category}</Badge>
+                    </div>
+                    <Badge className="bg-primary text-primary-foreground">
+                      Live Now
+                    </Badge>
+                  </div>
+                </CardHeader>
+                <CardContent>
+                  <div className="flex gap-2">
+                    <Button variant="default" size="sm">
+                      Join Event
+                    </Button>
+                    <Button variant="outline" size="sm">
+                      View Details
+                    </Button>
+                  </div>
+                </CardContent>
+              </Card>
+            ))}
+          </TabsContent>
+
           <TabsContent value="upcoming" className="space-y-4 mt-6">
-            {registeredEvents.map((event) => (
+            {upcomingEvents.map((event) => (
               <Card key={event.id} className="hover:shadow-md transition-shadow">
                 <CardHeader>
                   <div className="flex items-start justify-between">
@@ -122,6 +195,7 @@ const Dashboard = () => {
                         </span>
                       </CardDescription>
                       <p className="text-sm text-muted-foreground">{event.location}</p>
+                      <Badge className="mt-2">{event.category}</Badge>
                     </div>
                     <Badge variant="secondary" className="bg-primary/10 text-primary">
                       Registered
@@ -153,6 +227,8 @@ const Dashboard = () => {
                         <Calendar className="w-3 h-3" />
                         {event.date}
                       </CardDescription>
+                      <p className="text-sm text-muted-foreground">{event.location}</p>
+                      <Badge className="mt-2">{event.category}</Badge>
                     </div>
                     <Badge variant="secondary" className="bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-100">
                       Completed

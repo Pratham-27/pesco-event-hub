@@ -7,6 +7,8 @@ import Index from "./pages/Index";
 import Events from "./pages/Events";
 import Categories from "./pages/Categories";
 import Dashboard from "./pages/Dashboard";
+import Login from "./pages/Login";
+import Community from "./pages/Community";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -22,6 +24,8 @@ const App = () => (
           <Route path="/events" element={<Events />} />
           <Route path="/categories" element={<Categories />} />
           <Route path="/dashboard" element={<Dashboard />} />
+          <Route path="/login" element={<Login />} />
+          <Route path="/community" element={<Community />} />
           {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
           <Route path="*" element={<NotFound />} />
         </Routes>
