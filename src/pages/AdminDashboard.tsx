@@ -39,7 +39,16 @@ const AdminDashboard = () => {
   const { toast } = useToast();
   const navigate = useNavigate();
 
-  const [formData, setFormData] = useState({
+  const [formData, setFormData] = useState<{
+    title: string;
+    description: string;
+    date: string;
+    time: string;
+    location: string;
+    category: "Technical" | "Competition" | "Workshop" | "Cultural" | "Industrial Visit";
+    max_attendees: number;
+    featured: boolean;
+  }>({
     title: "",
     description: "",
     date: "",
@@ -158,7 +167,7 @@ const AdminDashboard = () => {
       date: event.date,
       time: event.time,
       location: event.location,
-      category: event.category,
+      category: event.category as "Technical" | "Competition" | "Workshop" | "Cultural" | "Industrial Visit",
       max_attendees: event.max_attendees,
       featured: event.featured,
     });
@@ -298,7 +307,7 @@ const AdminDashboard = () => {
                     <Label htmlFor="category">Category</Label>
                     <Select
                       value={formData.category}
-                      onValueChange={(value) => setFormData({ ...formData, category: value })}
+                      onValueChange={(value: "Technical" | "Competition" | "Workshop" | "Cultural" | "Industrial Visit") => setFormData({ ...formData, category: value })}
                     >
                       <SelectTrigger>
                         <SelectValue />

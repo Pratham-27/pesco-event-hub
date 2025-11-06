@@ -94,7 +94,7 @@ const EventCard = ({
       });
     } else {
       // Update attendee count
-      await supabase.rpc("increment_event_attendees", { event_id: id });
+      await supabase.rpc("increment_event_attendees" as any, { event_id: id });
       
       toast({
         title: "Success",
@@ -126,7 +126,7 @@ const EventCard = ({
       });
     } else {
       // Update attendee count
-      await supabase.rpc("decrement_event_attendees", { event_id: id });
+      await supabase.rpc("decrement_event_attendees" as any, { event_id: id });
       
       toast({
         title: "Success",

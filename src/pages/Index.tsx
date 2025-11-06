@@ -14,8 +14,8 @@ const featuredEvents = [
     time: "9:00 AM - 5:00 PM",
     location: "Main Auditorium, PESCOP",
     category: "Technical",
-    attendees: 234,
-    maxAttendees: 500,
+    current_attendees: 234,
+    max_attendees: 500,
     featured: true,
   },
   {
@@ -26,8 +26,8 @@ const featuredEvents = [
     time: "9:00 AM - 6:00 PM",
     location: "Main Campus, PESCOP",
     category: "Technical",
-    attendees: 156,
-    maxAttendees: 500,
+    current_attendees: 156,
+    max_attendees: 500,
     featured: true,
   },
   {
@@ -38,8 +38,8 @@ const featuredEvents = [
     time: "10:00 AM - 10:00 AM (Next Day)",
     location: "Computer Lab Block A",
     category: "Competition",
-    attendees: 89,
-    maxAttendees: 150,
+    current_attendees: 89,
+    max_attendees: 150,
     featured: true,
   },
 ];
