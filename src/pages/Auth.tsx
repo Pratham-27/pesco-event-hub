@@ -11,6 +11,25 @@ import Navigation from "@/components/Navigation";
 import { ArrowRight, User } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/hooks/useAuth";
+import { z } from "zod";
+
+const signUpSchema = z.object({
+  name: z.string().trim().min(2, "Name must be at least 2 characters").max(100, "Name must be less than 100 characters"),
+  mobile: z.string().regex(/^[0-9]{10}$/, "Mobile number must be exactly 10 digits"),
+  email: z.string().email("Invalid email address").max(255, "Email must be less than 255 characters"),
+  password: z.string()
+    .min(8, "Password must be at least 8 characters")
+    .max(100, "Password must be less than 100 characters")
+    .regex(/[A-Z]/, "Password must contain at least one uppercase letter")
+    .regex(/[a-z]/, "Password must contain at least one lowercase letter")
+    .regex(/[0-9]/, "Password must contain at least one number"),
+  year: z.enum(["FY", "SY", "TY", "BTech"], { errorMap: () => ({ message: "Please select a valid year" }) }),
+});
+
+const signInSchema = z.object({
+  email: z.string().email("Invalid email address"),
+  password: z.string().min(1, "Password is required"),
+});
 
 const Auth = () => {
   const navigate = useNavigate();
@@ -34,10 +53,14 @@ const Auth = () => {
   const handleSignUp = async (e: React.FormEvent) => {
     e.preventDefault();
     
-    if (!signUpData.name || !signUpData.mobile || !signUpData.email || !signUpData.password || !signUpData.year) {
+    // Validate with zod schema
+    const validationResult = signUpSchema.safeParse(signUpData);
+    
+    if (!validationResult.success) {
+      const firstError = validationResult.error.errors[0];
       toast({
-        title: "Error",
-        description: "Please fill in all fields",
+        title: "Validation Error",
+        description: firstError.message,
         variant: "destructive",
       });
       return;
@@ -72,10 +95,14 @@ const Auth = () => {
   const handleSignIn = async (e: React.FormEvent) => {
     e.preventDefault();
     
-    if (!signInData.email || !signInData.password) {
+    // Validate with zod schema
+    const validationResult = signInSchema.safeParse(signInData);
+    
+    if (!validationResult.success) {
+      const firstError = validationResult.error.errors[0];
       toast({
-        title: "Error",
-        description: "Please fill in all fields",
+        title: "Validation Error",
+        description: firstError.message,
         variant: "destructive",
       });
       return;
@@ -203,12 +230,14 @@ const Auth = () => {
                       <Input
                         id="password"
                         type="password"
-                        placeholder="Create a strong password"
+                        placeholder="Min 8 chars, with uppercase, lowercase & number"
                         value={signUpData.password}
                         onChange={(e) => setSignUpData({ ...signUpData, password: e.target.value })}
-                        minLength={6}
                         required
                       />
+                      <p className="text-xs text-muted-foreground">
+                        Must be 8+ characters with uppercase, lowercase, and number
+                      </p>
                     </div>
 
                     <div className="space-y-2">

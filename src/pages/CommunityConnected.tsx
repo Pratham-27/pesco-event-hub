@@ -12,6 +12,12 @@ import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/hooks/useAuth";
 import { supabase } from "@/integrations/supabase/client";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { z } from "zod";
+
+const postSchema = z.object({
+  title: z.string().trim().min(5, "Title must be at least 5 characters").max(200, "Title must be less than 200 characters"),
+  description: z.string().trim().min(10, "Description must be at least 10 characters").max(5000, "Description must be less than 5000 characters"),
+});
 
 const CommunityConnected = () => {
   const navigate = useNavigate();
@@ -94,16 +100,23 @@ const CommunityConnected = () => {
   const handleCreatePost = (e: React.FormEvent) => {
     e.preventDefault();
     
-    if (!newPost.title || !newPost.description) {
+    // Validate with zod schema
+    const validationResult = postSchema.safeParse(newPost);
+    
+    if (!validationResult.success) {
+      const firstError = validationResult.error.errors[0];
       toast({
-        title: "Error",
-        description: "Please fill in all fields",
+        title: "Validation Error",
+        description: firstError.message,
         variant: "destructive",
       });
       return;
     }
 
-    createDiscussion.mutate(newPost);
+    createDiscussion.mutate({
+      title: validationResult.data.title,
+      description: validationResult.data.description,
+    });
   };
 
   if (!user || !profile) return null;
@@ -174,8 +187,12 @@ const CommunityConnected = () => {
                     placeholder="Enter a catchy title for your event"
                     value={newPost.title}
                     onChange={(e) => setNewPost({ ...newPost, title: e.target.value })}
+                    maxLength={200}
                     required
                   />
+                  <p className="text-xs text-muted-foreground">
+                    {newPost.title.length}/200 characters
+                  </p>
                 </div>
                 <div className="space-y-2">
                   <Label htmlFor="description">Description</Label>
@@ -185,8 +202,12 @@ const CommunityConnected = () => {
                     value={newPost.description}
                     onChange={(e) => setNewPost({ ...newPost, description: e.target.value })}
                     rows={5}
+                    maxLength={5000}
                     required
                   />
+                  <p className="text-xs text-muted-foreground">
+                    {newPost.description.length}/5000 characters
+                  </p>
                 </div>
                 <div className="flex gap-2">
                   <Button type="submit" disabled={createDiscussion.isPending}>
