@@ -29,6 +29,12 @@ const signUpSchema = z.object({
 const signInSchema = z.object({
   email: z.string().email("Invalid email address"),
   password: z.string().min(1, "Password is required"),
+  mobile: z.string().regex(/^[0-9]{10}$/, "Mobile number must be exactly 10 digits"),
+});
+
+const adminSignInSchema = z.object({
+  email: z.string().email("Invalid email address"),
+  password: z.string().min(1, "Password is required"),
 });
 
 const Auth = () => {
@@ -36,6 +42,7 @@ const Auth = () => {
   const { toast } = useToast();
   const { signUp, signIn } = useAuth();
   const [loading, setLoading] = useState(false);
+  const [loginType, setLoginType] = useState<"student" | "admin">("student");
   
   const [signUpData, setSignUpData] = useState({
     name: "",
@@ -46,6 +53,12 @@ const Auth = () => {
   });
 
   const [signInData, setSignInData] = useState({
+    email: "",
+    password: "",
+    mobile: "",
+  });
+
+  const [adminSignInData, setAdminSignInData] = useState({
     email: "",
     password: "",
   });
@@ -129,6 +142,43 @@ const Auth = () => {
     navigate("/community");
   };
 
+  const handleAdminSignIn = async (e: React.FormEvent) => {
+    e.preventDefault();
+    
+    // Validate with zod schema
+    const validationResult = adminSignInSchema.safeParse(adminSignInData);
+    
+    if (!validationResult.success) {
+      const firstError = validationResult.error.errors[0];
+      toast({
+        title: "Validation Error",
+        description: firstError.message,
+        variant: "destructive",
+      });
+      return;
+    }
+
+    setLoading(true);
+    const { error } = await signIn(adminSignInData.email, adminSignInData.password);
+    setLoading(false);
+
+    if (error) {
+      toast({
+        title: "Login Error",
+        description: error.message,
+        variant: "destructive",
+      });
+      return;
+    }
+
+    toast({
+      title: "Admin Login Successful",
+      description: "Welcome back, Admin!",
+    });
+    
+    navigate("/admin");
+  };
+
   return (
     <div className="min-h-screen bg-background">
       <CollegeHeader />
@@ -141,50 +191,81 @@ const Auth = () => {
               <div className="w-16 h-16 mx-auto mb-4 rounded-full bg-gradient-to-br from-primary to-accent flex items-center justify-center">
                 <User className="w-8 h-8 text-white" />
               </div>
-              <CardTitle className="text-2xl font-bold">Student Authentication</CardTitle>
+              <CardTitle className="text-2xl font-bold">Authentication</CardTitle>
               <CardDescription>
-                Sign in or create an account to access the community
+                Sign in or create an account
               </CardDescription>
+              <div className="flex gap-2 justify-center pt-2">
+                <Button
+                  variant={loginType === "student" ? "default" : "outline"}
+                  size="sm"
+                  onClick={() => setLoginType("student")}
+                >
+                  Student
+                </Button>
+                <Button
+                  variant={loginType === "admin" ? "default" : "outline"}
+                  size="sm"
+                  onClick={() => setLoginType("admin")}
+                >
+                  Admin
+                </Button>
+              </div>
             </CardHeader>
             <CardContent>
-              <Tabs defaultValue="signin">
-                <TabsList className="grid w-full grid-cols-2">
-                  <TabsTrigger value="signin">Sign In</TabsTrigger>
-                  <TabsTrigger value="signup">Sign Up</TabsTrigger>
-                </TabsList>
+              {loginType === "student" ? (
+                <Tabs defaultValue="signin">
+                  <TabsList className="grid w-full grid-cols-2">
+                    <TabsTrigger value="signin">Sign In</TabsTrigger>
+                    <TabsTrigger value="signup">Sign Up</TabsTrigger>
+                  </TabsList>
 
-                <TabsContent value="signin">
-                  <form onSubmit={handleSignIn} className="space-y-4 mt-4">
-                    <div className="space-y-2">
-                      <Label htmlFor="signin-email">Email Address</Label>
-                      <Input
-                        id="signin-email"
-                        type="email"
-                        placeholder="Enter your college email"
-                        value={signInData.email}
-                        onChange={(e) => setSignInData({ ...signInData, email: e.target.value })}
-                        required
-                      />
-                    </div>
+                  <TabsContent value="signin">
+                    <form onSubmit={handleSignIn} className="space-y-4 mt-4">
+                      <div className="space-y-2">
+                        <Label htmlFor="signin-email">Email Address</Label>
+                        <Input
+                          id="signin-email"
+                          type="email"
+                          placeholder="Enter your college email"
+                          value={signInData.email}
+                          onChange={(e) => setSignInData({ ...signInData, email: e.target.value })}
+                          required
+                        />
+                      </div>
 
-                    <div className="space-y-2">
-                      <Label htmlFor="signin-password">Password</Label>
-                      <Input
-                        id="signin-password"
-                        type="password"
-                        placeholder="Enter your password"
-                        value={signInData.password}
-                        onChange={(e) => setSignInData({ ...signInData, password: e.target.value })}
-                        required
-                      />
-                    </div>
+                      <div className="space-y-2">
+                        <Label htmlFor="signin-mobile">Mobile Number</Label>
+                        <Input
+                          id="signin-mobile"
+                          type="tel"
+                          placeholder="Enter 10-digit mobile number"
+                          value={signInData.mobile}
+                          onChange={(e) => setSignInData({ ...signInData, mobile: e.target.value })}
+                          pattern="[0-9]{10}"
+                          maxLength={10}
+                          required
+                        />
+                      </div>
 
-                    <Button type="submit" className="w-full group" size="lg" disabled={loading}>
-                      {loading ? "Signing in..." : "Sign In"}
-                      <ArrowRight className="w-4 h-4 ml-2 group-hover:translate-x-1 transition-transform" />
-                    </Button>
-                  </form>
-                </TabsContent>
+                      <div className="space-y-2">
+                        <Label htmlFor="signin-password">Password</Label>
+                        <Input
+                          id="signin-password"
+                          type="password"
+                          placeholder="Enter your password"
+                          value={signInData.password}
+                          onChange={(e) => setSignInData({ ...signInData, password: e.target.value })}
+                          required
+                        />
+                      </div>
+
+                      <Button type="submit" className="w-full group" size="lg" disabled={loading}>
+                        {loading ? "Signing in..." : "Sign In"}
+                        <ArrowRight className="w-4 h-4 ml-2 group-hover:translate-x-1 transition-transform" />
+                      </Button>
+                    </form>
+                  </TabsContent>
 
                 <TabsContent value="signup">
                   <form onSubmit={handleSignUp} className="space-y-4 mt-4">
@@ -262,6 +343,38 @@ const Auth = () => {
                   </form>
                 </TabsContent>
               </Tabs>
+              ) : (
+                <form onSubmit={handleAdminSignIn} className="space-y-4 mt-6">
+                  <div className="space-y-2">
+                    <Label htmlFor="admin-email">Admin Email</Label>
+                    <Input
+                      id="admin-email"
+                      type="email"
+                      placeholder="Enter admin email"
+                      value={adminSignInData.email}
+                      onChange={(e) => setAdminSignInData({ ...adminSignInData, email: e.target.value })}
+                      required
+                    />
+                  </div>
+
+                  <div className="space-y-2">
+                    <Label htmlFor="admin-password">Admin Password</Label>
+                    <Input
+                      id="admin-password"
+                      type="password"
+                      placeholder="Enter admin password"
+                      value={adminSignInData.password}
+                      onChange={(e) => setAdminSignInData({ ...adminSignInData, password: e.target.value })}
+                      required
+                    />
+                  </div>
+
+                  <Button type="submit" className="w-full group" size="lg" disabled={loading}>
+                    {loading ? "Signing in..." : "Admin Sign In"}
+                    <ArrowRight className="w-4 h-4 ml-2 group-hover:translate-x-1 transition-transform" />
+                  </Button>
+                </form>
+              )}
             </CardContent>
           </Card>
         </div>

@@ -47,13 +47,6 @@ const Navigation = () => {
             })}
           </div>
 
-          {/* Desktop CTA */}
-          <div className="hidden md:block">
-            <Button variant="accent" size="sm">
-              Register Event
-            </Button>
-          </div>
-
           {/* Mobile Menu Button */}
           <button
             onClick={() => setIsOpen(!isOpen)}
@@ -82,11 +75,6 @@ const Navigation = () => {
                 </NavLink>
               );
             })}
-            <div className="pt-2">
-              <Button variant="accent" size="sm" className="w-full">
-                Register Event
-              </Button>
-            </div>
           </div>
         )}
       </div>
