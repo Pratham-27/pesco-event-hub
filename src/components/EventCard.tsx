@@ -1,6 +1,11 @@
 import { Calendar, MapPin, Users, Clock } from "lucide-react";
 import { Button } from "./ui/button";
 import { Badge } from "./ui/badge";
+import { useAuth } from "@/hooks/useAuth";
+import { supabase } from "@/integrations/supabase/client";
+import { useToast } from "@/hooks/use-toast";
+import { useState, useEffect } from "react";
+import { useNavigate } from "react-router-dom";
 
 interface EventCardProps {
   id: string;
@@ -10,24 +15,131 @@ interface EventCardProps {
   time: string;
   location: string;
   category: string;
-  attendees: number;
-  maxAttendees: number;
+  current_attendees: number;
+  max_attendees: number;
   image?: string;
   featured?: boolean;
+  onRegistrationChange?: () => void;
 }
 
 const EventCard = ({
+  id,
   title,
   description,
   date,
   time,
   location,
   category,
-  attendees,
-  maxAttendees,
+  current_attendees,
+  max_attendees,
   image,
   featured = false,
+  onRegistrationChange,
 }: EventCardProps) => {
+  const { user } = useAuth();
+  const { toast } = useToast();
+  const navigate = useNavigate();
+  const [isRegistered, setIsRegistered] = useState(false);
+  const [loading, setLoading] = useState(false);
+
+  useEffect(() => {
+    if (user) {
+      checkRegistration();
+    }
+  }, [user, id]);
+
+  const checkRegistration = async () => {
+    if (!user) return;
+
+    const { data } = await supabase
+      .from("event_registrations")
+      .select("id")
+      .eq("user_id", user.id)
+      .eq("event_id", id)
+      .maybeSingle();
+
+    setIsRegistered(!!data);
+  };
+
+  const handleRegister = async () => {
+    if (!user) {
+      toast({
+        title: "Login Required",
+        description: "Please login to register for events",
+      });
+      navigate("/auth");
+      return;
+    }
+
+    if (current_attendees >= max_attendees) {
+      toast({
+        title: "Event Full",
+        description: "This event has reached maximum capacity",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    setLoading(true);
+
+    const { error } = await supabase
+      .from("event_registrations")
+      .insert([{ user_id: user.id, event_id: id }]);
+
+    if (error) {
+      toast({
+        title: "Error",
+        description: "Failed to register for event",
+        variant: "destructive",
+      });
+    } else {
+      // Update attendee count
+      await supabase.rpc("increment_event_attendees", { event_id: id });
+      
+      toast({
+        title: "Success",
+        description: "Successfully registered for event!",
+      });
+      setIsRegistered(true);
+      onRegistrationChange?.();
+    }
+
+    setLoading(false);
+  };
+
+  const handleUnregister = async () => {
+    if (!user) return;
+
+    setLoading(true);
+
+    const { error } = await supabase
+      .from("event_registrations")
+      .delete()
+      .eq("user_id", user.id)
+      .eq("event_id", id);
+
+    if (error) {
+      toast({
+        title: "Error",
+        description: "Failed to cancel registration",
+        variant: "destructive",
+      });
+    } else {
+      // Update attendee count
+      await supabase.rpc("decrement_event_attendees", { event_id: id });
+      
+      toast({
+        title: "Success",
+        description: "Registration cancelled",
+      });
+      setIsRegistered(false);
+      onRegistrationChange?.();
+    }
+
+    setLoading(false);
+  };
+
+  const isFull = current_attendees >= max_attendees;
   return (
     <div className="group bg-card rounded-xl border border-border overflow-hidden hover:shadow-hover transition-all duration-300 hover:-translate-y-1">
       {/* Image */}
@@ -74,18 +186,33 @@ const EventCard = ({
           <div className="flex items-center gap-2 text-muted-foreground">
             <Users className="w-4 h-4 text-primary" />
             <span>
-              {attendees}/{maxAttendees} Registered
+              {current_attendees}/{max_attendees} Registered
             </span>
           </div>
         </div>
 
         <div className="flex gap-2 pt-2">
-          <Button variant="default" size="sm" className="flex-1">
-            View Details
-          </Button>
-          <Button variant="outline" size="sm" className="flex-1">
-            Register
-          </Button>
+          {isRegistered ? (
+            <Button 
+              variant="destructive" 
+              size="sm" 
+              className="flex-1" 
+              onClick={handleUnregister}
+              disabled={loading}
+            >
+              {loading ? "Processing..." : "Cancel Registration"}
+            </Button>
+          ) : (
+            <Button 
+              variant="default" 
+              size="sm" 
+              className="flex-1" 
+              onClick={handleRegister}
+              disabled={loading || isFull}
+            >
+              {loading ? "Processing..." : isFull ? "Event Full" : "Register"}
+            </Button>
+          )}
         </div>
       </div>
     </div>
