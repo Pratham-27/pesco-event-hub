@@ -139,7 +139,7 @@ const Index = () => {
                 className="animate-fade-in"
                 style={{ animationDelay: `${index * 0.1}s` }}
               >
-                <EventCard {...event} />
+                <EventCard {...event} disableRegistration />
               </div>
             ))}
           </div>

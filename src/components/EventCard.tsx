@@ -5,7 +5,7 @@ import { useAuth } from "@/hooks/useAuth";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { useState, useEffect } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, Link } from "react-router-dom";
 
 interface EventCardProps {
   id: string;
@@ -20,6 +20,7 @@ interface EventCardProps {
   image?: string;
   featured?: boolean;
   onRegistrationChange?: () => void;
+  disableRegistration?: boolean;
 }
 
 const EventCard = ({
@@ -35,6 +36,7 @@ const EventCard = ({
   image,
   featured = false,
   onRegistrationChange,
+  disableRegistration = false,
 }: EventCardProps) => {
   const { user } = useAuth();
   const { toast } = useToast();
@@ -192,7 +194,13 @@ const EventCard = ({
         </div>
 
         <div className="flex gap-2 pt-2">
-          {isRegistered ? (
+          {disableRegistration ? (
+            <Link to="/events" className="flex-1">
+              <Button variant="default" size="sm" className="w-full">
+                View Details
+              </Button>
+            </Link>
+          ) : isRegistered ? (
             <Button 
               variant="destructive" 
               size="sm" 
