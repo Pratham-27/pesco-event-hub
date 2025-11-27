@@ -276,26 +276,9 @@ const Auth = () => {
               <CardDescription>
                 Sign in or create an account
               </CardDescription>
-              <div className="flex gap-2 justify-center pt-2">
-                <Button
-                  variant={loginType === "student" ? "default" : "outline"}
-                  size="sm"
-                  onClick={() => setLoginType("student")}
-                >
-                  Student
-                </Button>
-                <Button
-                  variant={loginType === "admin" ? "default" : "outline"}
-                  size="sm"
-                  onClick={() => setLoginType("admin")}
-                >
-                  Admin
-                </Button>
-              </div>
             </CardHeader>
             <CardContent>
-              {loginType === "student" ? (
-                <Tabs defaultValue="signin">
+              <Tabs defaultValue="signin">
                   <TabsList className="grid w-full grid-cols-2">
                     <TabsTrigger value="signin">Sign In</TabsTrigger>
                     <TabsTrigger value="signup">Sign Up</TabsTrigger>
@@ -496,94 +479,6 @@ const Auth = () => {
                   </form>
                 </TabsContent>
               </Tabs>
-              ) : (
-                <Tabs defaultValue="signin" className="mt-4">
-                  <TabsList className="grid w-full grid-cols-2">
-                    <TabsTrigger value="signin">Sign In</TabsTrigger>
-                    <TabsTrigger value="signup">Sign Up</TabsTrigger>
-                  </TabsList>
-
-                  <TabsContent value="signin">
-                    <form onSubmit={handleAdminSignIn} className="space-y-4 mt-4">
-                      <div className="space-y-2">
-                        <Label htmlFor="admin-signin-email">Admin Email</Label>
-                        <Input
-                          id="admin-signin-email"
-                          type="email"
-                          placeholder="Enter admin email"
-                          value={adminSignInData.email}
-                          onChange={(e) => setAdminSignInData({ ...adminSignInData, email: e.target.value })}
-                          required
-                        />
-                      </div>
-
-                      <div className="space-y-2">
-                        <Label htmlFor="admin-signin-password">Admin Password</Label>
-                        <Input
-                          id="admin-signin-password"
-                          type="password"
-                          placeholder="Enter admin password"
-                          value={adminSignInData.password}
-                          onChange={(e) => setAdminSignInData({ ...adminSignInData, password: e.target.value })}
-                          required
-                        />
-                      </div>
-
-                      <Button type="submit" className="w-full group" size="lg" disabled={loading}>
-                        {loading ? "Signing in..." : "Admin Sign In"}
-                        <ArrowRight className="w-4 h-4 ml-2 group-hover:translate-x-1 transition-transform" />
-                      </Button>
-                    </form>
-                  </TabsContent>
-
-                  <TabsContent value="signup">
-                    <form onSubmit={handleAdminSignUp} className="space-y-4 mt-4">
-                      <div className="space-y-2">
-                        <Label htmlFor="admin-name">Full Name</Label>
-                        <Input
-                          id="admin-name"
-                          placeholder="Enter admin full name"
-                          value={adminSignUpData.name}
-                          onChange={(e) => setAdminSignUpData({ ...adminSignUpData, name: e.target.value })}
-                          required
-                        />
-                      </div>
-
-                      <div className="space-y-2">
-                        <Label htmlFor="admin-signup-email">Admin Email</Label>
-                        <Input
-                          id="admin-signup-email"
-                          type="email"
-                          placeholder="Enter admin email"
-                          value={adminSignUpData.email}
-                          onChange={(e) => setAdminSignUpData({ ...adminSignUpData, email: e.target.value })}
-                          required
-                        />
-                      </div>
-
-                      <div className="space-y-2">
-                        <Label htmlFor="admin-signup-password">Password</Label>
-                        <Input
-                          id="admin-signup-password"
-                          type="password"
-                          placeholder="Min 8 chars, with uppercase, lowercase & number"
-                          value={adminSignUpData.password}
-                          onChange={(e) => setAdminSignUpData({ ...adminSignUpData, password: e.target.value })}
-                          required
-                        />
-                        <p className="text-xs text-muted-foreground">
-                          Must be 8+ characters with uppercase, lowercase, and number
-                        </p>
-                      </div>
-
-                      <Button type="submit" className="w-full group" size="lg" disabled={loading}>
-                        {loading ? "Creating admin account..." : "Admin Sign Up"}
-                        <ArrowRight className="w-4 h-4 ml-2 group-hover:translate-x-1 transition-transform" />
-                      </Button>
-                    </form>
-                  </TabsContent>
-                </Tabs>
-              )}
             </CardContent>
           </Card>
         </div>
