@@ -79,7 +79,7 @@ const CommunityConnected = () => {
   });
 
   // Fetch announcements
-  const { data: announcements = [], isLoading: announcementsLoading, refetch: refetchAnnouncements } = useQuery({
+  const { data: announcements = [], isLoading: announcementsLoading, error: announcementsError, refetch: refetchAnnouncements } = useQuery({
     queryKey: ["announcements"],
     queryFn: async () => {
       const { data, error } = await supabase
@@ -92,10 +92,14 @@ const CommunityConnected = () => {
         .order("is_important", { ascending: false })
         .order("created_at", { ascending: false });
       
-      if (error) throw error;
-      return data;
+      if (error) {
+        console.error("Announcements fetch error:", error);
+        throw error;
+      }
+      return data || [];
     },
     staleTime: 30000,
+    retry: 1,
   });
 
   // Fetch discussions
@@ -218,6 +222,11 @@ const CommunityConnected = () => {
     return <LoadingSpinner />;
   }
 
+  // Handle announcements error gracefully
+  if (announcementsError) {
+    console.error("Failed to load announcements:", announcementsError);
+  }
+
   const isProfileIncomplete = !profile || !profile.name || !profile.mobile || !profile.year || !profile.semester || !profile.course;
 
   const formatDate = (dateString: string) => {
@@ -328,7 +337,22 @@ const CommunityConnected = () => {
               )}
             </div>
 
-            {announcements.length === 0 ? (
+            {announcementsError ? (
+              <Card className="p-8 text-center border-destructive/50">
+                <Megaphone className="w-12 h-12 mx-auto mb-3 text-destructive" />
+                <p className="text-destructive font-semibold">Failed to load announcements</p>
+                <p className="text-sm text-muted-foreground mt-1">
+                  Please try refreshing the page
+                </p>
+                <Button 
+                  onClick={() => refetchAnnouncements()} 
+                  variant="outline" 
+                  className="mt-4"
+                >
+                  Retry
+                </Button>
+              </Card>
+            ) : announcements.length === 0 ? (
               <Card className="p-8 text-center">
                 <Megaphone className="w-12 h-12 mx-auto mb-3 text-muted-foreground" />
                 <p className="text-muted-foreground">No announcements yet</p>
