@@ -85,7 +85,7 @@ const Index = () => {
           <div className="max-w-4xl mx-auto text-center space-y-6 animate-fade-in">
             <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-primary/10 border border-primary/20 mb-4">
               <Sparkles className="w-4 h-4 text-primary" />
-              <span className="text-sm font-medium text-primary">Welcome to Event Hub</span>
+              <span className="text-sm font-medium text-primary">Welcome to PESCOE EVENT HUB</span>
             </div>
             <h1 className="text-4xl md:text-6xl lg:text-7xl font-bold leading-tight">
               Discover, Register & Participate in{" "}
@@ -94,7 +94,7 @@ const Index = () => {
               </span>
             </h1>
             <p className="text-lg md:text-xl text-muted-foreground max-w-2xl mx-auto">
-              Your one-stop platform for all technical symposiums, workshops, cultural fests, and competitions at PESCOP
+              Your one-stop platform for all technical symposiums, workshops, cultural fests, and competitions at PESCOE
             </p>
             <div className="flex flex-col sm:flex-row gap-4 justify-center pt-4">
               <Link to="/events">
