@@ -40,6 +40,31 @@ const Events = () => {
 
   useEffect(() => {
     fetchEvents();
+
+    // Refetch when window regains focus
+    const handleFocus = () => fetchEvents();
+    window.addEventListener('focus', handleFocus);
+
+    // Set up realtime subscription for event changes
+    const channel = supabase
+      .channel('events-changes')
+      .on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table: 'events'
+        },
+        () => {
+          fetchEvents();
+        }
+      )
+      .subscribe();
+
+    return () => {
+      window.removeEventListener('focus', handleFocus);
+      supabase.removeChannel(channel);
+    };
   }, []);
 
   const fetchEvents = async () => {
