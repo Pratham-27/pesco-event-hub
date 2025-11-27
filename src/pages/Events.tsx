@@ -14,6 +14,7 @@ import {
 } from "@/components/ui/select";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
+import { LoadingSpinner } from "@/components/ui/loading-spinner";
 
 interface Event {
   id: string;
@@ -155,9 +156,7 @@ const Events = () => {
         </div>
 
         {loading ? (
-          <div className="text-center py-16">
-            <p className="text-muted-foreground">Loading events...</p>
-          </div>
+          <LoadingSpinner />
         ) : (
           <>
             {/* Upcoming Events Section */}

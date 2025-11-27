@@ -1,3 +1,4 @@
+import { useEffect, useState } from "react";
 import Navigation from "@/components/Navigation";
 import CollegeHeader from "@/components/CollegeHeader";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -5,70 +6,119 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Calendar, CheckCircle, Clock, User } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { supabase } from "@/integrations/supabase/client";
+import { useAuth } from "@/hooks/useAuth";
+import { LoadingSpinner } from "@/components/ui/loading-spinner";
+import { useNavigate } from "react-router-dom";
+
+interface Event {
+  id: string;
+  title: string;
+  description: string;
+  date: string;
+  time: string;
+  location: string;
+  category: string;
+  status: string;
+  current_attendees: number;
+  max_attendees: number;
+}
 
 const Dashboard = () => {
-  const upcomingEvents = [
-    {
-      id: "1",
-      title: "Innovation 2k26",
-      date: "March 15, 2026",
-      time: "9:00 AM",
-      status: "upcoming",
-      location: "Main Auditorium, PESCOP",
-      category: "Technical",
-    },
-    {
-      id: "2",
-      title: "Kurukshetra 2k26",
-      date: "March 22, 2026",
-      time: "9:00 AM",
-      status: "upcoming",
-      location: "Main Campus, PESCOP",
-      category: "Technical",
-    },
-    {
-      id: "3",
-      title: "Technical Training Workshop",
-      date: "November 10-15, 2025",
-      time: "10:00 AM",
-      status: "upcoming",
-      location: "Training Center, PESCOP",
-      category: "Workshop",
-    },
-  ];
+  const [events, setEvents] = useState<Event[]>([]);
+  const [registeredEventIds, setRegisteredEventIds] = useState<string[]>([]);
+  const [loading, setLoading] = useState(true);
+  const { user } = useAuth();
+  const navigate = useNavigate();
 
-  const liveEvents = [
-    {
-      id: "live-1",
-      title: "Nexus AI Build",
-      date: "November 6-7, 2025",
-      time: "10:00 AM",
-      status: "live",
-      location: "Computer Lab Block A",
-      category: "Competition",
-    },
-  ];
+  useEffect(() => {
+    if (!user) {
+      navigate("/auth");
+      return;
+    }
 
-  const pastEvents = [
-    {
-      id: "past-1",
-      title: "Innovation 2k25",
-      date: "October 9, 2025",
-      status: "completed",
-      certificate: true,
-      location: "Main Auditorium, PESCOP",
-      category: "Technical",
-    },
-    {
-      id: "past-2",
-      title: "Kurukshetra 2k25",
-      date: "March 2025",
-      status: "completed",
-      certificate: true,
-      location: "Main Campus, PESCOP",
-      category: "Technical",
-    },
-  ];
+    fetchEvents();
+    fetchUserRegistrations();
+
+    // Refetch when window regains focus
+    const handleFocus = () => {
+      fetchEvents();
+      fetchUserRegistrations();
+    };
+    window.addEventListener('focus', handleFocus);
+
+    // Set up realtime subscription for event changes
+    const eventsChannel = supabase
+      .channel('dashboard-events-changes')
+      .on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table: 'events'
+        },
+        () => {
+          fetchEvents();
+        }
+      )
+      .subscribe();
+
+    // Set up realtime subscription for registration changes
+    const registrationsChannel = supabase
+      .channel('dashboard-registrations-changes')
+      .on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table: 'event_registrations'
+        },
+        () => {
+          fetchUserRegistrations();
+        }
+      )
+      .subscribe();
+
+    return () => {
+      window.removeEventListener('focus', handleFocus);
+      supabase.removeChannel(eventsChannel);
+      supabase.removeChannel(registrationsChannel);
+    };
+  }, [user]);
+
+  const fetchEvents = async () => {
+    const { data, error } = await supabase
+      .from("events")
+      .select("*")
+      .order("date", { ascending: true });
+
+    if (!error && data) {
+      setEvents(data);
+    }
+    setLoading(false);
+  };
+
+  const fetchUserRegistrations = async () => {
+    if (!user) return;
+
+    const { data, error } = await supabase
+      .from("event_registrations")
+      .select("event_id")
+      .eq("user_id", user.id);
+
+    if (!error && data) {
+      setRegisteredEventIds(data.map(r => r.event_id));
+    }
+  };
+
+  if (loading) {
+    return <LoadingSpinner />;
+  }
+
+  const registeredEvents = events.filter(e => registeredEventIds.includes(e.id));
+  const upcomingEvents = registeredEvents.filter(e => e.status === "upcoming");
+  const liveEvents = registeredEvents.filter(e => e.status === "live");
+  const pastEvents = registeredEvents.filter(e => e.status === "completed" || e.status === "cancelled");
 
   return (
     <div className="min-h-screen bg-background">
@@ -118,8 +168,8 @@ const Dashboard = () => {
               <CheckCircle className="w-4 h-4 text-muted-foreground" />
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold text-primary">{pastEvents.filter(e => e.certificate).length}</div>
-              <p className="text-xs text-muted-foreground">Available to download</p>
+              <div className="text-2xl font-bold text-primary">{pastEvents.length}</div>
+              <p className="text-xs text-muted-foreground">Completed events</p>
             </CardContent>
           </Card>
         </div>
@@ -235,13 +285,13 @@ const Dashboard = () => {
                     </Badge>
                   </div>
                 </CardHeader>
-                {event.certificate && (
-                  <CardContent>
-                    <Button variant="accent" size="sm">
-                      Download Certificate
+                <CardContent>
+                  <div className="flex gap-2">
+                    <Button variant="outline" size="sm">
+                      View Details
                     </Button>
-                  </CardContent>
-                )}
+                  </div>
+                </CardContent>
               </Card>
             ))}
           </TabsContent>
