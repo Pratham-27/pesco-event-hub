@@ -11,6 +11,7 @@ import { User, LogOut, Calendar, Clock } from "lucide-react";
 import { Separator } from "@/components/ui/separator";
 import { useNavigate } from "react-router-dom";
 import { toast } from "sonner";
+import ProfileEditDialog from "./ProfileEditDialog";
 
 const UserProfileMenu = () => {
   const { user, signOut } = useAuth();
@@ -45,9 +46,13 @@ const UserProfileMenu = () => {
   });
 
   const handleLogout = async () => {
-    await signOut();
-    toast.success("Logged out successfully");
-    navigate("/");
+    try {
+      await signOut();
+      toast.success("Logged out successfully");
+      navigate("/");
+    } catch (error) {
+      toast.error("Logout failed");
+    }
   };
 
   if (!user) return null;
@@ -130,6 +135,11 @@ const UserProfileMenu = () => {
               )}
             </div>
           </div>
+
+          <Separator />
+
+          {/* Profile Edit */}
+          <ProfileEditDialog />
 
           <Separator />
 
