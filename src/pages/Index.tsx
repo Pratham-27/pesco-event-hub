@@ -1,48 +1,24 @@
+import { useEffect, useState } from "react";
 import { Button } from "@/components/ui/button";
 import Navigation from "@/components/Navigation";
 import CollegeHeader from "@/components/CollegeHeader";
 import EventCard from "@/components/EventCard";
 import { Calendar, TrendingUp, Users, Award, ArrowRight, Sparkles } from "lucide-react";
 import { Link } from "react-router-dom";
+import { supabase } from "@/integrations/supabase/client";
 
-const featuredEvents = [
-  {
-    id: "1",
-    title: "Innovation 2k26",
-    description: "Annual technical event featuring competitions, workshops, and guest lectures from industry experts.",
-    date: "March 15, 2026",
-    time: "9:00 AM - 5:00 PM",
-    location: "Main Auditorium, PESCOP",
-    category: "Technical",
-    current_attendees: 234,
-    max_attendees: 500,
-    featured: true,
-  },
-  {
-    id: "2",
-    title: "Kurukshetra 2k26",
-    description: "Premier technical symposium with cutting-edge competitions and innovation challenges.",
-    date: "March 22, 2026",
-    time: "9:00 AM - 6:00 PM",
-    location: "Main Campus, PESCOP",
-    category: "Technical",
-    current_attendees: 156,
-    max_attendees: 500,
-    featured: true,
-  },
-  {
-    id: "3",
-    title: "Nexus AI Build",
-    description: "Live AI hackathon where teams build innovative AI-powered solutions. Currently ongoing!",
-    date: "November 6-7, 2025",
-    time: "10:00 AM - 10:00 AM (Next Day)",
-    location: "Computer Lab Block A",
-    category: "Competition",
-    current_attendees: 89,
-    max_attendees: 150,
-    featured: true,
-  },
-];
+interface Event {
+  id: string;
+  title: string;
+  description: string;
+  date: string;
+  time: string;
+  location: string;
+  category: string;
+  current_attendees: number;
+  max_attendees: number;
+  featured: boolean;
+}
 
 const stats = [
   { icon: Calendar, label: "Total Events", value: "150+", color: "from-primary to-primary/70" },
@@ -52,6 +28,51 @@ const stats = [
 ];
 
 const Index = () => {
+  const [featuredEvents, setFeaturedEvents] = useState<Event[]>([]);
+
+  useEffect(() => {
+    fetchFeaturedEvents();
+
+    // Refetch when window regains focus
+    const handleFocus = () => fetchFeaturedEvents();
+    window.addEventListener('focus', handleFocus);
+
+    // Set up realtime subscription for event changes
+    const channel = supabase
+      .channel('index-events-changes')
+      .on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table: 'events'
+        },
+        () => {
+          fetchFeaturedEvents();
+        }
+      )
+      .subscribe();
+
+    return () => {
+      window.removeEventListener('focus', handleFocus);
+      supabase.removeChannel(channel);
+    };
+  }, []);
+
+  const fetchFeaturedEvents = async () => {
+    const { data, error } = await supabase
+      .from("events")
+      .select("*")
+      .eq("featured", true)
+      .in("status", ["upcoming", "live"])
+      .order("date", { ascending: true })
+      .limit(3);
+
+    if (!error && data) {
+      setFeaturedEvents(data);
+    }
+  };
+
   return (
     <div className="min-h-screen bg-background">
       <CollegeHeader />
