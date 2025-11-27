@@ -115,10 +115,15 @@ const Dashboard = () => {
     return <LoadingSpinner />;
   }
 
-  const registeredEvents = events.filter(e => registeredEventIds.includes(e.id));
-  const upcomingEvents = registeredEvents.filter(e => e.status === "upcoming");
-  const liveEvents = registeredEvents.filter(e => e.status === "live");
-  const pastEvents = registeredEvents.filter(e => e.status === "completed" || e.status === "cancelled");
+  // Show ALL events, not just registered ones
+  const upcomingEvents = events.filter(e => e.status === "upcoming");
+  const liveEvents = events.filter(e => e.status === "live");
+  const pastEvents = events.filter(e => e.status === "completed" || e.status === "cancelled");
+  
+  // Count registered events for stats
+  const registeredUpcoming = upcomingEvents.filter(e => registeredEventIds.includes(e.id)).length;
+  const registeredLive = liveEvents.filter(e => registeredEventIds.includes(e.id)).length;
+  const registeredPast = pastEvents.filter(e => registeredEventIds.includes(e.id)).length;
 
   return (
     <div className="min-h-screen bg-background">
@@ -146,8 +151,8 @@ const Dashboard = () => {
               <Calendar className="w-4 h-4 text-muted-foreground" />
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold text-primary">{upcomingEvents.length}</div>
-              <p className="text-xs text-muted-foreground">Events registered</p>
+              <div className="text-2xl font-bold text-primary">{registeredUpcoming}</div>
+              <p className="text-xs text-muted-foreground">Registered / {upcomingEvents.length} total</p>
             </CardContent>
           </Card>
 
@@ -157,8 +162,8 @@ const Dashboard = () => {
               <Clock className="w-4 h-4 text-muted-foreground" />
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold text-accent">{liveEvents.length}</div>
-              <p className="text-xs text-muted-foreground">Events happening now</p>
+              <div className="text-2xl font-bold text-accent">{registeredLive}</div>
+              <p className="text-xs text-muted-foreground">Registered / {liveEvents.length} live now</p>
             </CardContent>
           </Card>
 
@@ -168,8 +173,8 @@ const Dashboard = () => {
               <CheckCircle className="w-4 h-4 text-muted-foreground" />
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold text-primary">{pastEvents.length}</div>
-              <p className="text-xs text-muted-foreground">Completed events</p>
+              <div className="text-2xl font-bold text-primary">{registeredPast}</div>
+              <p className="text-xs text-muted-foreground">Attended / {pastEvents.length} completed</p>
             </CardContent>
           </Card>
         </div>
@@ -183,7 +188,13 @@ const Dashboard = () => {
           </TabsList>
 
           <TabsContent value="live" className="space-y-4 mt-6">
-            {liveEvents.map((event) => (
+            {liveEvents.length === 0 ? (
+              <Card className="p-8 text-center">
+                <p className="text-muted-foreground mb-2">No live events at the moment</p>
+                <p className="text-sm text-muted-foreground">Check back later for live events</p>
+              </Card>
+            ) : (
+              liveEvents.map((event) => (
               <Card key={event.id} className="hover:shadow-md transition-shadow border-primary/50 bg-primary/5">
                 <CardHeader>
                   <div className="flex items-start justify-between">
@@ -209,7 +220,7 @@ const Dashboard = () => {
                       <Badge className="mt-2">{event.category}</Badge>
                     </div>
                     <Badge className="bg-primary text-primary-foreground">
-                      Live Now
+                      {registeredEventIds.includes(event.id) ? "Registered - Live Now" : "Live Now"}
                     </Badge>
                   </div>
                 </CardHeader>
@@ -224,11 +235,17 @@ const Dashboard = () => {
                   </div>
                 </CardContent>
               </Card>
-            ))}
+            )))}
           </TabsContent>
 
           <TabsContent value="upcoming" className="space-y-4 mt-6">
-            {upcomingEvents.map((event) => (
+            {upcomingEvents.length === 0 ? (
+              <Card className="p-8 text-center">
+                <p className="text-muted-foreground mb-2">No upcoming events</p>
+                <p className="text-sm text-muted-foreground">Check the Events page to see all available events</p>
+              </Card>
+            ) : (
+              upcomingEvents.map((event) => (
               <Card key={event.id} className="hover:shadow-md transition-shadow">
                 <CardHeader>
                   <div className="flex items-start justify-between">
@@ -247,9 +264,15 @@ const Dashboard = () => {
                       <p className="text-sm text-muted-foreground">{event.location}</p>
                       <Badge className="mt-2">{event.category}</Badge>
                     </div>
-                    <Badge variant="secondary" className="bg-primary/10 text-primary">
-                      Registered
-                    </Badge>
+                    {registeredEventIds.includes(event.id) ? (
+                      <Badge variant="secondary" className="bg-primary/10 text-primary">
+                        Registered
+                      </Badge>
+                    ) : (
+                      <Badge variant="outline">
+                        Not Registered
+                      </Badge>
+                    )}
                   </div>
                 </CardHeader>
                 <CardContent>
@@ -263,11 +286,17 @@ const Dashboard = () => {
                   </div>
                 </CardContent>
               </Card>
-            ))}
+            )))}
           </TabsContent>
 
           <TabsContent value="past" className="space-y-4 mt-6">
-            {pastEvents.map((event) => (
+            {pastEvents.length === 0 ? (
+              <Card className="p-8 text-center">
+                <p className="text-muted-foreground mb-2">No past events</p>
+                <p className="text-sm text-muted-foreground">Completed events will appear here</p>
+              </Card>
+            ) : (
+              pastEvents.map((event) => (
               <Card key={event.id} className="hover:shadow-md transition-shadow">
                 <CardHeader>
                   <div className="flex items-start justify-between">
@@ -280,9 +309,15 @@ const Dashboard = () => {
                       <p className="text-sm text-muted-foreground">{event.location}</p>
                       <Badge className="mt-2">{event.category}</Badge>
                     </div>
-                    <Badge variant="secondary" className="bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-100">
-                      Completed
-                    </Badge>
+                    {registeredEventIds.includes(event.id) ? (
+                      <Badge variant="secondary" className="bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-100">
+                        Attended
+                      </Badge>
+                    ) : (
+                      <Badge variant="secondary">
+                        Completed
+                      </Badge>
+                    )}
                   </div>
                 </CardHeader>
                 <CardContent>
@@ -293,7 +328,7 @@ const Dashboard = () => {
                   </div>
                 </CardContent>
               </Card>
-            ))}
+            )))}
           </TabsContent>
         </Tabs>
       </main>
