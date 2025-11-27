@@ -9,7 +9,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Badge } from "@/components/ui/badge";
-import { MessageSquare, ThumbsUp, User, Plus, Megaphone } from "lucide-react";
+import { MessageSquare, ThumbsUp, User, Plus, Megaphone, Loader2 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/hooks/useAuth";
 import { supabase } from "@/integrations/supabase/client";
@@ -17,7 +17,8 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { z } from "zod";
 import { LoadingSpinner } from "@/components/ui/loading-spinner";
 import AnnouncementCard from "@/components/AnnouncementCard";
-import AnnouncementManagement from "@/components/AnnouncementManagement";
+import { Switch } from "@/components/ui/switch";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 
 const postSchema = z.object({
   title: z.string().trim().min(5, "Title must be at least 5 characters").max(200, "Title must be less than 200 characters"),
@@ -31,9 +32,18 @@ const CommunityConnected = () => {
   const queryClient = useQueryClient();
   const [showNewPost, setShowNewPost] = useState(false);
   const [newPost, setNewPost] = useState({ title: "", description: "" });
+  const [showNewAnnouncement, setShowNewAnnouncement] = useState(false);
+  const [newAnnouncement, setNewAnnouncement] = useState({ 
+    title: "", 
+    message: "", 
+    link: "", 
+    eventId: "", 
+    isImportant: false 
+  });
   const [isAdmin, setIsAdmin] = useState(false);
   const [editingAnnouncement, setEditingAnnouncement] = useState<any>(null);
   const [lastVisit, setLastVisit] = useState<string | null>(null);
+  const [savingAnnouncement, setSavingAnnouncement] = useState(false);
 
   useEffect(() => {
     if (!user) {
@@ -100,6 +110,23 @@ const CommunityConnected = () => {
     },
     staleTime: 30000,
     retry: 1,
+  });
+
+  // Fetch events for announcement form
+  const { data: events = [], isLoading: eventsLoading } = useQuery({
+    queryKey: ["events-for-announcements"],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("events")
+        .select("id, title")
+        .in("status", ["upcoming", "live"])
+        .order("date", { ascending: true });
+      
+      if (error) throw error;
+      return data || [];
+    },
+    enabled: isAdmin,
+    staleTime: 30000,
   });
 
   // Fetch discussions
@@ -171,6 +198,71 @@ const CommunityConnected = () => {
       title: validationResult.data.title,
       description: validationResult.data.description,
     });
+  };
+
+  const handleCreateAnnouncement = async (e: React.FormEvent) => {
+    e.preventDefault();
+
+    if (!user) {
+      toast({
+        title: "Error",
+        description: "You must be logged in",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    if (!newAnnouncement.title.trim() || !newAnnouncement.message.trim()) {
+      toast({
+        title: "Validation Error",
+        description: "Title and message are required",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    setSavingAnnouncement(true);
+
+    try {
+      const announcementData = {
+        title: newAnnouncement.title.trim(),
+        message: newAnnouncement.message.trim(),
+        link: newAnnouncement.link.trim() || null,
+        event_id: newAnnouncement.eventId || null,
+        is_important: newAnnouncement.isImportant,
+        created_by: user.id,
+      };
+
+      const { error } = await supabase
+        .from("announcements")
+        .insert([announcementData]);
+
+      if (error) throw error;
+
+      toast({
+        title: "Success",
+        description: "Announcement created successfully",
+      });
+
+      setNewAnnouncement({
+        title: "",
+        message: "",
+        link: "",
+        eventId: "",
+        isImportant: false,
+      });
+      setShowNewAnnouncement(false);
+      refetchAnnouncements();
+    } catch (error: any) {
+      console.error("Announcement error:", error);
+      toast({
+        title: "Error",
+        description: error.message || "Failed to create announcement",
+        variant: "destructive",
+      });
+    } finally {
+      setSavingAnnouncement(false);
+    }
   };
 
   const handleDeleteAnnouncement = async (id: string) => {
@@ -329,13 +421,116 @@ const CommunityConnected = () => {
             <div className="flex items-center justify-between mb-4">
               <h2 className="text-2xl font-bold">Official Announcements</h2>
               {isAdmin && (
-                <AnnouncementManagement
-                  onAnnouncementChange={handleAnnouncementChange}
-                  editData={editingAnnouncement}
-                  onEditComplete={() => setEditingAnnouncement(null)}
-                />
+                <Button onClick={() => setShowNewAnnouncement(!showNewAnnouncement)} className="group">
+                  <Plus className="w-4 h-4 mr-2" />
+                  New Announcement
+                </Button>
               )}
             </div>
+
+            {/* New Announcement Form */}
+            {isAdmin && showNewAnnouncement && (
+              <Card className="mb-6 animate-fade-in">
+                <CardHeader>
+                  <CardTitle>Create New Announcement</CardTitle>
+                  <CardDescription>Share important updates with all students</CardDescription>
+                </CardHeader>
+                <CardContent>
+                  <form onSubmit={handleCreateAnnouncement} className="space-y-4">
+                    <div className="space-y-2">
+                      <Label htmlFor="ann-title">Title</Label>
+                      <Input
+                        id="ann-title"
+                        placeholder="Announcement title"
+                        value={newAnnouncement.title}
+                        onChange={(e) => setNewAnnouncement({ ...newAnnouncement, title: e.target.value })}
+                        maxLength={200}
+                        required
+                      />
+                      <p className="text-xs text-muted-foreground">
+                        {newAnnouncement.title.length}/200 characters
+                      </p>
+                    </div>
+                    <div className="space-y-2">
+                      <Label htmlFor="ann-message">Message</Label>
+                      <Textarea
+                        id="ann-message"
+                        placeholder="Write your announcement message here..."
+                        value={newAnnouncement.message}
+                        onChange={(e) => setNewAnnouncement({ ...newAnnouncement, message: e.target.value })}
+                        rows={5}
+                        maxLength={2000}
+                        required
+                      />
+                      <p className="text-xs text-muted-foreground">
+                        {newAnnouncement.message.length}/2000 characters
+                      </p>
+                    </div>
+                    <div className="space-y-2">
+                      <Label htmlFor="ann-link">Link (Optional)</Label>
+                      <Input
+                        id="ann-link"
+                        type="url"
+                        placeholder="https://example.com"
+                        value={newAnnouncement.link}
+                        onChange={(e) => setNewAnnouncement({ ...newAnnouncement, link: e.target.value })}
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <Label htmlFor="ann-event">Related Event (Optional)</Label>
+                      <Select
+                        value={newAnnouncement.eventId}
+                        onValueChange={(value) => setNewAnnouncement({ ...newAnnouncement, eventId: value })}
+                      >
+                        <SelectTrigger id="ann-event">
+                          <SelectValue placeholder="Select an event" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="">None</SelectItem>
+                          {events.map((event: any) => (
+                            <SelectItem key={event.id} value={event.id}>
+                              {event.title}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </div>
+                    <div className="flex items-center justify-between p-4 rounded-lg bg-secondary/50">
+                      <div className="space-y-0.5">
+                        <Label htmlFor="ann-important" className="cursor-pointer">
+                          Mark as Important
+                        </Label>
+                        <p className="text-xs text-muted-foreground">
+                          Important announcements are highlighted and pinned
+                        </p>
+                      </div>
+                      <Switch
+                        id="ann-important"
+                        checked={newAnnouncement.isImportant}
+                        onCheckedChange={(checked) => 
+                          setNewAnnouncement({ ...newAnnouncement, isImportant: checked })
+                        }
+                      />
+                    </div>
+                    <div className="flex gap-2">
+                      <Button type="submit" disabled={savingAnnouncement}>
+                        {savingAnnouncement ? (
+                          <>
+                            <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                            Creating...
+                          </>
+                        ) : (
+                          "Create Announcement"
+                        )}
+                      </Button>
+                      <Button type="button" variant="outline" onClick={() => setShowNewAnnouncement(false)}>
+                        Cancel
+                      </Button>
+                    </div>
+                  </form>
+                </CardContent>
+              </Card>
+            )}
 
             {announcementsError ? (
               <Card className="p-8 text-center border-destructive/50">
