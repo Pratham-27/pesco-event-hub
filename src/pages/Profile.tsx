@@ -13,6 +13,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { User, LogOut } from "lucide-react";
 import { LoadingSpinner } from "@/components/ui/loading-spinner";
+import ProfileCompletionChecklist from "@/components/ProfileCompletionChecklist";
 
 const Profile = () => {
   const navigate = useNavigate();
@@ -26,13 +27,20 @@ const Profile = () => {
     queryFn: async () => {
       if (!user?.id) throw new Error("No user found");
       
+      console.log("Fetching profile for user:", user.id);
+      
       const { data, error } = await supabase
         .from('profiles')
         .select('*')
         .eq('id', user.id)
-        .single();
+        .maybeSingle();
 
-      if (error) throw error;
+      if (error) {
+        console.error("Profile fetch error:", error);
+        throw error;
+      }
+      
+      console.log("Profile data fetched:", data);
       return data;
     },
     enabled: !!user?.id,
@@ -49,14 +57,17 @@ const Profile = () => {
 
   // Update form data when profile loads
   useEffect(() => {
-    if (profile && user) {
+    console.log("Profile data:", profile);
+    console.log("User data:", user);
+    
+    if (user) {
       setFormData({
-        name: profile.name || "",
-        mobile: profile.mobile || "",
-        email: user.email || profile.email || "",
-        year: profile.year || "",
-        semester: profile.semester || "",
-        course: profile.course || "",
+        name: profile?.name || "",
+        mobile: profile?.mobile || "",
+        email: user.email || "",
+        year: profile?.year || "",
+        semester: profile?.semester || "",
+        course: profile?.course || "",
       });
     }
   }, [profile, user]);
@@ -65,18 +76,45 @@ const Profile = () => {
     mutationFn: async (data: typeof formData) => {
       if (!user?.id) throw new Error("No user found");
 
-      const { error } = await supabase
-        .from('profiles')
-        .update({
-          name: data.name,
-          mobile: data.mobile,
-          year: data.year,
-          semester: data.semester,
-          course: data.course,
-        })
-        .eq('id', user.id);
+      console.log("Updating profile with data:", data);
 
-      if (error) throw error;
+      // Check if profile exists first
+      const { data: existingProfile } = await supabase
+        .from('profiles')
+        .select('id')
+        .eq('id', user.id)
+        .maybeSingle();
+
+      if (!existingProfile) {
+        // Insert new profile if it doesn't exist
+        const { error } = await supabase
+          .from('profiles')
+          .insert({
+            id: user.id,
+            email: user.email || "",
+            name: data.name,
+            mobile: data.mobile,
+            year: data.year,
+            semester: data.semester,
+            course: data.course,
+          });
+
+        if (error) throw error;
+      } else {
+        // Update existing profile
+        const { error } = await supabase
+          .from('profiles')
+          .update({
+            name: data.name,
+            mobile: data.mobile,
+            year: data.year,
+            semester: data.semester,
+            course: data.course,
+          })
+          .eq('id', user.id);
+
+        if (error) throw error;
+      }
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['profile', user?.id] });
@@ -86,6 +124,7 @@ const Profile = () => {
       });
     },
     onError: (error: any) => {
+      console.error("Profile update error:", error);
       toast({
         title: "Update Failed",
         description: error.message,
@@ -125,6 +164,18 @@ const Profile = () => {
 
       <main className="container mx-auto px-4 py-12">
         <div className="max-w-2xl mx-auto">
+          {/* Profile Completion Checklist */}
+          <ProfileCompletionChecklist 
+            profile={{
+              name: formData.name,
+              mobile: formData.mobile,
+              email: formData.email,
+              year: formData.year,
+              semester: formData.semester,
+              course: formData.course,
+            }}
+          />
+
           <Card className="animate-fade-in">
             <CardHeader className="space-y-1">
               <div className="flex items-center gap-4 mb-4">
