@@ -14,6 +14,8 @@ import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { Plus, Pencil, Trash2, Calendar } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
+import { AdminAnalytics } from "@/components/AdminAnalytics";
+import { EventRegistrations } from "@/components/EventRegistrations";
 
 interface Event {
   id: string;
@@ -235,6 +237,9 @@ const AdminDashboard = () => {
               <Button variant="outline" onClick={() => navigate("/admin/users")}>
                 Manage Users
               </Button>
+              <Button variant="outline" onClick={() => navigate("/admin/community")}>
+                Community Moderation
+              </Button>
               <Dialog open={dialogOpen} onOpenChange={(open) => {
                 setDialogOpen(open);
                 if (!open) resetForm();
@@ -363,6 +368,8 @@ const AdminDashboard = () => {
           </div>
         </div>
 
+        <AdminAnalytics />
+
         <div className="grid gap-4">
           {events.map((event) => (
             <Card key={event.id} className="hover:shadow-md transition-shadow">
@@ -379,6 +386,7 @@ const AdminDashboard = () => {
                     <CardDescription>{event.description}</CardDescription>
                   </div>
                   <div className="flex gap-2">
+                    <EventRegistrations eventId={event.id} eventTitle={event.title} />
                     <Button variant="outline" size="sm" onClick={() => handleEdit(event)}>
                       <Pencil className="w-4 h-4" />
                     </Button>
