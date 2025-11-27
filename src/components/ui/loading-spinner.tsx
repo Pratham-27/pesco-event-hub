@@ -1,3 +1,4 @@
+import { Loader2 } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 interface LoadingSpinnerProps {
@@ -7,16 +8,16 @@ interface LoadingSpinnerProps {
 
 export function LoadingSpinner({ className, size = "md" }: LoadingSpinnerProps) {
   const sizeClasses = {
-    sm: "h-8 w-8 border-2",
-    md: "h-12 w-12 border-3",
-    lg: "h-16 w-16 border-4",
+    sm: "h-6 w-6",
+    md: "h-10 w-10",
+    lg: "h-14 w-14",
   };
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-background">
-      <div
+      <Loader2 
         className={cn(
-          "animate-spin rounded-full border-t-primary border-r-primary/30 border-b-primary border-l-primary/30",
+          "animate-spin text-primary",
           sizeClasses[size],
           className
         )}
