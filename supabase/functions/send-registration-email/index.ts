@@ -1,7 +1,6 @@
 import { serve } from "https://deno.land/std@0.190.0/http/server.ts";
-import { Resend } from "npm:resend@4.0.0";
 
-const resend = new Resend(Deno.env.get("RESEND_API_KEY"));
+const RESEND_API_KEY = Deno.env.get("RESEND_API_KEY");
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -35,32 +34,45 @@ const handler = async (req: Request): Promise<Response> => {
 
     console.log("Sending registration email to:", userEmail);
 
-    const emailResponse = await resend.emails.send({
-      from: "Event Hub <onboarding@resend.dev>",
-      to: [userEmail],
-      subject: `Registration Confirmed: ${eventTitle}`,
-      html: `
-        <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
-          <h1 style="color: #333;">Registration Confirmed!</h1>
-          <p>Hi ${userName},</p>
-          <p>Thank you for registering for <strong>${eventTitle}</strong>!</p>
-          
-          <div style="background-color: #f5f5f5; padding: 20px; border-radius: 8px; margin: 20px 0;">
-            <h2 style="color: #666; margin-top: 0;">Event Details</h2>
-            <p><strong>📅 Date:</strong> ${eventDate}</p>
-            <p><strong>🕐 Time:</strong> ${eventTime}</p>
-            <p><strong>📍 Location:</strong> ${eventLocation}</p>
+    const emailResponse = await fetch('https://api.resend.com/emails', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${RESEND_API_KEY}`,
+      },
+      body: JSON.stringify({
+        from: 'PESCOE Event Hub <onboarding@resend.dev>',
+        to: [userEmail],
+        subject: `Registration Confirmed: ${eventTitle}`,
+        html: `
+          <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
+            <h1 style="color: #333;">Registration Confirmed!</h1>
+            <p>Hi ${userName},</p>
+            <p>Thank you for registering for <strong>${eventTitle}</strong>!</p>
+            
+            <div style="background-color: #f5f5f5; padding: 20px; border-radius: 8px; margin: 20px 0;">
+              <h2 style="color: #666; margin-top: 0;">Event Details</h2>
+              <p><strong>📅 Date:</strong> ${eventDate}</p>
+              <p><strong>🕐 Time:</strong> ${eventTime}</p>
+              <p><strong>📍 Location:</strong> ${eventLocation}</p>
+            </div>
+            
+            <p>We look forward to seeing you at the event!</p>
+            <p>Best regards,<br>The PESCOE Event Hub Team</p>
           </div>
-          
-          <p>We look forward to seeing you at the event!</p>
-          <p>Best regards,<br>The Event Hub Team</p>
-        </div>
-      `,
+        `,
+      }),
     });
 
-    console.log("Email sent successfully:", emailResponse);
+    const data = await emailResponse.json();
+    
+    if (!emailResponse.ok) {
+      throw new Error(data.message || 'Failed to send email');
+    }
 
-    return new Response(JSON.stringify(emailResponse), {
+    console.log("Email sent successfully:", data);
+
+    return new Response(JSON.stringify({ success: true, data }), {
       status: 200,
       headers: {
         "Content-Type": "application/json",
