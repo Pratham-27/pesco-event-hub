@@ -158,29 +158,35 @@ export type Database = {
       }
       profiles: {
         Row: {
+          course: string | null
           created_at: string | null
           email: string
           id: string
           mobile: string | null
           name: string
+          semester: string | null
           updated_at: string | null
           year: string | null
         }
         Insert: {
+          course?: string | null
           created_at?: string | null
           email: string
           id: string
           mobile?: string | null
           name: string
+          semester?: string | null
           updated_at?: string | null
           year?: string | null
         }
         Update: {
+          course?: string | null
           created_at?: string | null
           email?: string
           id?: string
           mobile?: string | null
           name?: string
+          semester?: string | null
           updated_at?: string | null
           year?: string | null
         }

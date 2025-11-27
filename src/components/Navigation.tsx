@@ -49,7 +49,12 @@ const Navigation = () => {
               );
             })}
             {user ? (
-              <UserProfileMenu />
+              <Link to="/profile">
+                <Button variant="ghost" className="flex items-center gap-2">
+                  <User className="w-4 h-4" />
+                  Profile
+                </Button>
+              </Link>
             ) : (
               <Link to="/auth">
                 <Button variant="ghost" className="flex items-center gap-2">
@@ -89,9 +94,12 @@ const Navigation = () => {
               );
             })}
             {user ? (
-              <div className="px-4">
-                <UserProfileMenu />
-              </div>
+              <Link to="/profile" onClick={() => setIsOpen(false)}>
+                <Button variant="ghost" className="w-full justify-start gap-3 px-4 py-3">
+                  <User className="w-5 h-5" />
+                  Profile
+                </Button>
+              </Link>
             ) : (
               <Link to="/auth" onClick={() => setIsOpen(false)}>
                 <Button variant="ghost" className="w-full justify-start gap-3 px-4 py-3">

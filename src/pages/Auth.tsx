@@ -25,7 +25,6 @@ const signUpSchema = z.object({
     .regex(/[A-Z]/, "Password must contain at least one uppercase letter")
     .regex(/[a-z]/, "Password must contain at least one lowercase letter")
     .regex(/[0-9]/, "Password must contain at least one number"),
-  year: z.enum(["FY", "SY", "TY", "BTech"], { errorMap: () => ({ message: "Please select a valid year" }) }),
 });
 
 const signInSchema = z.object({
@@ -73,7 +72,6 @@ const Auth = () => {
     mobile: "",
     email: "",
     password: "",
-    year: "",
   });
 
   const [signInData, setSignInData] = useState({
@@ -113,7 +111,6 @@ const Auth = () => {
     const { error } = await signUp(signUpData.email, signUpData.password, {
       name: signUpData.name,
       mobile: signUpData.mobile,
-      year: signUpData.year,
     });
 
     setLoading(false);
@@ -482,21 +479,6 @@ const Auth = () => {
                       <p className="text-xs text-muted-foreground">
                         Must be 8+ characters with uppercase, lowercase, and number
                       </p>
-                    </div>
-
-                    <div className="space-y-2">
-                      <Label htmlFor="year">Year of Study</Label>
-                      <Select value={signUpData.year} onValueChange={(value) => setSignUpData({ ...signUpData, year: value })}>
-                        <SelectTrigger id="year">
-                          <SelectValue placeholder="Select your year" />
-                        </SelectTrigger>
-                        <SelectContent>
-                          <SelectItem value="FY">First Year (FY)</SelectItem>
-                          <SelectItem value="SY">Second Year (SY)</SelectItem>
-                          <SelectItem value="TY">Third Year (TY)</SelectItem>
-                          <SelectItem value="BTech">B.Tech (Final Year)</SelectItem>
-                        </SelectContent>
-                      </Select>
                     </div>
 
                     <Button type="submit" className="w-full group" size="lg" disabled={loading}>
