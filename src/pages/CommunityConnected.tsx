@@ -127,30 +127,13 @@ const CommunityConnected = () => {
 
   if (!user) return null;
 
-  // Show loading state while profile is being fetched
+  // Show loading state while data is being fetched
   if (profileLoading || discussionsLoading) {
     return <LoadingSpinner />;
   }
 
-  // Show error if profile fetch fails
-  if (profileError || !profile) {
-    return (
-      <div className="min-h-screen bg-background">
-        <CollegeHeader />
-        <Navigation />
-        <main className="container mx-auto px-4 py-8">
-          <Card>
-            <CardContent className="pt-6">
-              <div className="text-center">
-                <p className="text-destructive mb-4">Unable to load your profile. Please complete your profile setup.</p>
-                <Button onClick={() => navigate("/profile")}>Go to Profile</Button>
-              </div>
-            </CardContent>
-          </Card>
-        </main>
-      </div>
-    );
-  }
+  // Show warning banner if profile is incomplete but still allow access
+  const isProfileIncomplete = !profile || !profile.name || !profile.mobile || !profile.year || !profile.semester || !profile.course;
 
   const formatDate = (dateString: string) => {
     const date = new Date(dateString);
@@ -171,6 +154,25 @@ const CommunityConnected = () => {
       <Navigation />
 
       <main className="container mx-auto px-4 py-8">
+        {/* Profile Incomplete Warning */}
+        {isProfileIncomplete && (
+          <Card className="mb-6 border-orange-500 bg-orange-50 dark:bg-orange-950/20 animate-fade-in">
+            <CardContent className="pt-6">
+              <div className="flex items-start gap-4">
+                <div className="flex-1">
+                  <h3 className="font-semibold text-orange-900 dark:text-orange-100 mb-2">Complete Your Profile</h3>
+                  <p className="text-sm text-orange-800 dark:text-orange-200 mb-4">
+                    To get the full experience and have your suggestions properly attributed, please complete your profile information.
+                  </p>
+                  <Button onClick={() => navigate("/profile")} size="sm" variant="outline" className="border-orange-500">
+                    Complete Profile
+                  </Button>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+        )}
+
         {/* Header */}
         <div className="mb-8 animate-fade-in">
           <div className="flex items-center justify-between mb-3">
@@ -188,19 +190,23 @@ const CommunityConnected = () => {
         </div>
 
         {/* User Info */}
-        <Card className="mb-6 animate-fade-in">
-          <CardContent className="pt-6">
-            <div className="flex items-center gap-3">
-              <div className="w-12 h-12 rounded-full bg-gradient-to-br from-primary to-accent flex items-center justify-center">
-                <User className="w-6 h-6 text-white" />
+        {profile && (
+          <Card className="mb-6 animate-fade-in">
+            <CardContent className="pt-6">
+              <div className="flex items-center gap-3">
+                <div className="w-12 h-12 rounded-full bg-gradient-to-br from-primary to-accent flex items-center justify-center">
+                  <User className="w-6 h-6 text-white" />
+                </div>
+                <div>
+                  <h3 className="font-semibold">{profile.name || "User"}</h3>
+                  <p className="text-sm text-muted-foreground">
+                    {profile.year || "Not specified"} • {user?.email || profile.email || "No email"}
+                  </p>
+                </div>
               </div>
-              <div>
-                <h3 className="font-semibold">{profile.name}</h3>
-                <p className="text-sm text-muted-foreground">{profile.year} • {profile.email}</p>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
+            </CardContent>
+          </Card>
+        )}
 
         {/* New Post Form */}
         {showNewPost && (
