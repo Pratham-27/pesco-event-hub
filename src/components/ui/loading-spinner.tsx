@@ -14,18 +14,13 @@ export function LoadingSpinner({ className, size = "md" }: LoadingSpinnerProps) 
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-background">
-      <div className="relative">
-        <div
-          className={cn(
-            "animate-spin rounded-full border-t-primary border-r-transparent border-b-primary border-l-transparent",
-            sizeClasses[size],
-            className
-          )}
-        />
-        <div className="absolute inset-0 flex items-center justify-center">
-          <div className="h-3 w-3 rounded-full bg-primary animate-pulse" />
-        </div>
-      </div>
+      <div
+        className={cn(
+          "animate-spin rounded-full border-t-primary border-r-primary/30 border-b-primary border-l-primary/30",
+          sizeClasses[size],
+          className
+        )}
+      />
     </div>
   );
 }

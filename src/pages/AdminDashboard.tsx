@@ -71,6 +71,26 @@ const AdminDashboard = () => {
   useEffect(() => {
     if (isAdmin) {
       fetchEvents();
+
+      // Set up realtime subscription for event changes
+      const channel = supabase
+        .channel('admin-events-changes')
+        .on(
+          'postgres_changes',
+          {
+            event: '*',
+            schema: 'public',
+            table: 'events'
+          },
+          () => {
+            fetchEvents();
+          }
+        )
+        .subscribe();
+
+      return () => {
+        supabase.removeChannel(channel);
+      };
     }
   }, [isAdmin]);
 
