@@ -2,9 +2,13 @@ import { NavLink } from "@/components/NavLink";
 import { Menu, X, Calendar, Home, List, User } from "lucide-react";
 import { useState } from "react";
 import { Button } from "./ui/button";
+import { useAuth } from "@/hooks/useAuth";
+import UserProfileMenu from "./UserProfileMenu";
+import { Link } from "react-router-dom";
 
 const Navigation = () => {
   const [isOpen, setIsOpen] = useState(false);
+  const { user } = useAuth();
 
   const navItems = [
     { to: "/", label: "Home", icon: Home },
@@ -12,7 +16,6 @@ const Navigation = () => {
     { to: "/categories", label: "Categories", icon: List },
     { to: "/dashboard", label: "Dashboard", icon: User },
     { to: "/community", label: "Community", icon: List },
-    { to: "/auth", label: "Login", icon: User },
   ];
 
   return (
@@ -45,6 +48,16 @@ const Navigation = () => {
                 </NavLink>
               );
             })}
+            {user ? (
+              <UserProfileMenu />
+            ) : (
+              <Link to="/auth">
+                <Button variant="ghost" className="flex items-center gap-2">
+                  <User className="w-4 h-4" />
+                  Login
+                </Button>
+              </Link>
+            )}
           </div>
 
           {/* Mobile Menu Button */}
@@ -75,6 +88,18 @@ const Navigation = () => {
                 </NavLink>
               );
             })}
+            {user ? (
+              <div className="px-4">
+                <UserProfileMenu />
+              </div>
+            ) : (
+              <Link to="/auth" onClick={() => setIsOpen(false)}>
+                <Button variant="ghost" className="w-full justify-start gap-3 px-4 py-3">
+                  <User className="w-5 h-5" />
+                  Login
+                </Button>
+              </Link>
+            )}
           </div>
         )}
       </div>
