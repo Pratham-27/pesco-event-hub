@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import Navigation from "@/components/Navigation";
 import CollegeHeader from "@/components/CollegeHeader";
+import GoBackButton from "@/components/GoBackButton";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -250,6 +251,7 @@ const AdminDashboard = () => {
       <Navigation />
 
       <main className="container mx-auto px-4 py-8">
+        <GoBackButton />
         <div className="mb-8 animate-fade-in">
           <div className="flex justify-between items-start mb-6">
             <div>

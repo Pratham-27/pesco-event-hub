@@ -10,6 +10,7 @@ import { Badge } from "@/components/ui/badge";
 import { Shield, ShieldCheck, Loader2 } from "lucide-react";
 import CollegeHeader from "@/components/CollegeHeader";
 import Navigation from "@/components/Navigation";
+import GoBackButton from "@/components/GoBackButton";
 
 interface UserProfile {
   id: string;
@@ -156,6 +157,7 @@ const UserManagement = () => {
       <Navigation />
 
       <main className="container mx-auto px-4 py-12">
+        <GoBackButton />
         <Card>
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
