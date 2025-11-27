@@ -2,6 +2,7 @@ import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import Navigation from "@/components/Navigation";
 import CollegeHeader from "@/components/CollegeHeader";
+import GoBackButton from "@/components/GoBackButton";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Textarea } from "@/components/ui/textarea";
@@ -342,6 +343,7 @@ const CommunityConnected = () => {
       <Navigation />
 
       <main className="container mx-auto px-4 py-8">
+        <GoBackButton />
         {/* Profile Incomplete Warning */}
         {isProfileIncomplete && (
           <Card className="mb-6 border-orange-500 bg-orange-50 dark:bg-orange-950/20 animate-fade-in">

@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import Navigation from "@/components/Navigation";
 import CollegeHeader from "@/components/CollegeHeader";
+import GoBackButton from "@/components/GoBackButton";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Calendar, CheckCircle, Clock, User } from "lucide-react";
@@ -131,6 +132,7 @@ const Dashboard = () => {
       <Navigation />
 
       <main className="container mx-auto px-4 py-8">
+        <GoBackButton />
         <div className="mb-8 animate-fade-in">
           <div className="flex items-center gap-3 mb-3">
             <div className="w-12 h-12 rounded-full bg-gradient-to-br from-primary to-accent flex items-center justify-center">

@@ -10,6 +10,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { MessageSquare, ThumbsUp, Clock, CheckCircle, XCircle, AlertCircle, Loader2 } from "lucide-react";
 import CollegeHeader from "@/components/CollegeHeader";
 import Navigation from "@/components/Navigation";
+import GoBackButton from "@/components/GoBackButton";
 
 interface Discussion {
   id: string;
@@ -153,6 +154,7 @@ const CommunityModeration = () => {
       <Navigation />
 
       <main className="container mx-auto px-4 py-12">
+        <GoBackButton />
         <div className="mb-8">
           <h1 className="text-4xl font-bold mb-2">Community Moderation</h1>
           <p className="text-muted-foreground">Review and manage student suggestions and event ideas</p>

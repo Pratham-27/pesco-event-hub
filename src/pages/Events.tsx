@@ -1,6 +1,7 @@
 import { useState, useEffect } from "react";
 import Navigation from "@/components/Navigation";
 import CollegeHeader from "@/components/CollegeHeader";
+import GoBackButton from "@/components/GoBackButton";
 import EventCard from "@/components/EventCard";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
@@ -116,6 +117,7 @@ const Events = () => {
       <Navigation />
 
       <main className="container mx-auto px-4 py-8">
+        <GoBackButton />
         {/* Header */}
         <div className="mb-8 animate-fade-in">
           <h1 className="text-4xl md:text-5xl font-bold bg-gradient-to-r from-primary to-accent bg-clip-text text-transparent mb-3">
