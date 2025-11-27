@@ -1,14 +1,36 @@
 import { NavLink } from "@/components/NavLink";
-import { Menu, X, Calendar, Home, List, User } from "lucide-react";
-import { useState } from "react";
+import { Menu, X, Calendar, Home, List, User, Shield } from "lucide-react";
+import { useState, useEffect } from "react";
 import { Button } from "./ui/button";
 import { useAuth } from "@/hooks/useAuth";
 import UserProfileMenu from "./UserProfileMenu";
 import { Link } from "react-router-dom";
+import { supabase } from "@/integrations/supabase/client";
 
 const Navigation = () => {
   const [isOpen, setIsOpen] = useState(false);
+  const [isAdmin, setIsAdmin] = useState(false);
   const { user } = useAuth();
+
+  useEffect(() => {
+    const checkAdminStatus = async () => {
+      if (!user) {
+        setIsAdmin(false);
+        return;
+      }
+
+      const { data } = await supabase
+        .from("user_roles")
+        .select("role")
+        .eq("user_id", user.id)
+        .eq("role", "admin")
+        .maybeSingle();
+
+      setIsAdmin(!!data);
+    };
+
+    checkAdminStatus();
+  }, [user]);
 
   const navItems = [
     { to: "/", label: "Home", icon: Home },
@@ -16,6 +38,10 @@ const Navigation = () => {
     { to: "/categories", label: "Categories", icon: List },
     { to: "/dashboard", label: "Dashboard", icon: User },
     { to: "/community", label: "Community", icon: List },
+  ];
+
+  const adminNavItems = [
+    { to: "/admin", label: "Admin Panel", icon: Shield },
   ];
 
   return (
@@ -41,6 +67,20 @@ const Navigation = () => {
                   key={item.to}
                   to={item.to}
                   className="px-4 py-2 rounded-lg text-foreground/70 hover:text-foreground hover:bg-secondary/50 transition-all duration-300 flex items-center gap-2"
+                  activeClassName="!text-primary !bg-primary/10 font-semibold"
+                >
+                  <Icon className="w-4 h-4" />
+                  {item.label}
+                </NavLink>
+              );
+            })}
+            {isAdmin && adminNavItems.map((item) => {
+              const Icon = item.icon;
+              return (
+                <NavLink
+                  key={item.to}
+                  to={item.to}
+                  className="px-4 py-2 rounded-lg text-foreground/70 hover:text-foreground hover:bg-secondary/50 transition-all duration-300 flex items-center gap-2 border border-primary/20"
                   activeClassName="!text-primary !bg-primary/10 font-semibold"
                 >
                   <Icon className="w-4 h-4" />
@@ -86,6 +126,21 @@ const Navigation = () => {
                   to={item.to}
                   onClick={() => setIsOpen(false)}
                   className="flex items-center gap-3 px-4 py-3 rounded-lg text-foreground/70 hover:text-foreground hover:bg-secondary/50 transition-all duration-300"
+                  activeClassName="!text-primary !bg-primary/10 font-semibold"
+                >
+                  <Icon className="w-5 h-5" />
+                  {item.label}
+                </NavLink>
+              );
+            })}
+            {isAdmin && adminNavItems.map((item) => {
+              const Icon = item.icon;
+              return (
+                <NavLink
+                  key={item.to}
+                  to={item.to}
+                  onClick={() => setIsOpen(false)}
+                  className="flex items-center gap-3 px-4 py-3 rounded-lg text-foreground/70 hover:text-foreground hover:bg-secondary/50 transition-all duration-300 border border-primary/20"
                   activeClassName="!text-primary !bg-primary/10 font-semibold"
                 >
                   <Icon className="w-5 h-5" />
