@@ -34,7 +34,7 @@ const CommunityConnected = () => {
   }, [user, navigate]);
 
   // Fetch user profile
-  const { data: profile } = useQuery({
+  const { data: profile, isLoading: profileLoading, error: profileError } = useQuery({
     queryKey: ["profile", user?.id],
     queryFn: async () => {
       const { data, error } = await supabase
@@ -43,7 +43,10 @@ const CommunityConnected = () => {
         .eq("id", user?.id)
         .single();
       
-      if (error) throw error;
+      if (error) {
+        console.error("Profile fetch error:", error);
+        throw error;
+      }
       return data;
     },
     enabled: !!user,
@@ -119,7 +122,40 @@ const CommunityConnected = () => {
     });
   };
 
-  if (!user || !profile) return null;
+  if (!user) return null;
+
+  // Show loading state while profile is being fetched
+  if (profileLoading) {
+    return (
+      <div className="min-h-screen bg-background">
+        <CollegeHeader />
+        <Navigation />
+        <main className="container mx-auto px-4 py-8">
+          <div className="text-center">Loading...</div>
+        </main>
+      </div>
+    );
+  }
+
+  // Show error if profile fetch fails
+  if (profileError || !profile) {
+    return (
+      <div className="min-h-screen bg-background">
+        <CollegeHeader />
+        <Navigation />
+        <main className="container mx-auto px-4 py-8">
+          <Card>
+            <CardContent className="pt-6">
+              <div className="text-center">
+                <p className="text-destructive mb-4">Unable to load your profile. Please complete your profile setup.</p>
+                <Button onClick={() => navigate("/dashboard")}>Go to Dashboard</Button>
+              </div>
+            </CardContent>
+          </Card>
+        </main>
+      </div>
+    );
+  }
 
   const formatDate = (dateString: string) => {
     const date = new Date(dateString);
