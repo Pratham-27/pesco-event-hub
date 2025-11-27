@@ -6,7 +6,7 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Switch } from "@/components/ui/switch";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Plus, Megaphone } from "lucide-react";
+import { Plus, Megaphone, Loader2 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/hooks/useAuth";
@@ -38,6 +38,8 @@ const AnnouncementManagement = ({
 }: AnnouncementManagementProps) => {
   const [open, setOpen] = useState(false);
   const [loading, setLoading] = useState(false);
+  const [loadingEvents, setLoadingEvents] = useState(false);
+  const [eventsError, setEventsError] = useState<string | null>(null);
   const [events, setEvents] = useState<Event[]>([]);
   const { toast } = useToast();
   const { user } = useAuth();
@@ -71,14 +73,29 @@ const AnnouncementManagement = ({
   }, [open]);
 
   const fetchEvents = async () => {
-    const { data, error } = await supabase
-      .from("events")
-      .select("id, title")
-      .in("status", ["upcoming", "live"])
-      .order("date", { ascending: true });
+    setLoadingEvents(true);
+    setEventsError(null);
+    
+    try {
+      const { data, error } = await supabase
+        .from("events")
+        .select("id, title")
+        .in("status", ["upcoming", "live"])
+        .order("date", { ascending: true });
 
-    if (!error && data) {
-      setEvents(data);
+      if (error) throw error;
+      
+      setEvents(data || []);
+    } catch (error: any) {
+      console.error("Error fetching events:", error);
+      setEventsError(error.message || "Failed to load events");
+      toast({
+        title: "Error",
+        description: "Failed to load events. You can still create announcements without linking to an event.",
+        variant: "destructive",
+      });
+    } finally {
+      setLoadingEvents(false);
     }
   };
 
@@ -200,96 +217,116 @@ const AnnouncementManagement = ({
           </div>
         </DialogHeader>
 
-        <form onSubmit={handleSubmit} className="space-y-4 mt-4">
-          <div className="space-y-2">
-            <Label htmlFor="title">Title *</Label>
-            <Input
-              id="title"
-              placeholder="Announcement title"
-              value={formData.title}
-              onChange={(e) => setFormData({ ...formData, title: e.target.value })}
-              required
-            />
+        {loadingEvents ? (
+          <div className="flex flex-col items-center justify-center py-8 space-y-3">
+            <Loader2 className="w-8 h-8 animate-spin text-primary" />
+            <p className="text-sm text-muted-foreground">Loading form...</p>
           </div>
-
-          <div className="space-y-2">
-            <Label htmlFor="message">Message *</Label>
-            <Textarea
-              id="message"
-              placeholder="Write your announcement message here..."
-              value={formData.message}
-              onChange={(e) => setFormData({ ...formData, message: e.target.value })}
-              rows={6}
-              required
-            />
-          </div>
-
-          <div className="space-y-2">
-            <Label htmlFor="link">Link (Optional)</Label>
-            <Input
-              id="link"
-              type="url"
-              placeholder="https://example.com"
-              value={formData.link}
-              onChange={(e) => setFormData({ ...formData, link: e.target.value })}
-            />
-          </div>
-
-          <div className="space-y-2">
-            <Label htmlFor="event">Related Event (Optional)</Label>
-            <Select
-              value={formData.eventId}
-              onValueChange={(value) => setFormData({ ...formData, eventId: value })}
-            >
-              <SelectTrigger id="event">
-                <SelectValue placeholder="Select an event" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="">None</SelectItem>
-                {events.map((event) => (
-                  <SelectItem key={event.id} value={event.id}>
-                    {event.title}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </div>
-
-          <div className="flex items-center justify-between p-4 rounded-lg bg-secondary/50">
-            <div className="space-y-0.5">
-              <Label htmlFor="important" className="cursor-pointer">
-                Mark as Important
-              </Label>
-              <p className="text-xs text-muted-foreground">
-                Important announcements are highlighted and pinned
-              </p>
+        ) : (
+          <form onSubmit={handleSubmit} className="space-y-4 mt-4">
+            <div className="space-y-2">
+              <Label htmlFor="title">Title *</Label>
+              <Input
+                id="title"
+                placeholder="Announcement title"
+                value={formData.title}
+                onChange={(e) => setFormData({ ...formData, title: e.target.value })}
+                required
+              />
             </div>
-            <Switch
-              id="important"
-              checked={formData.isImportant}
-              onCheckedChange={(checked) => 
-                setFormData({ ...formData, isImportant: checked })
-              }
-            />
-          </div>
 
-          <div className="flex gap-2 pt-4">
-            <Button
-              type="button"
-              variant="outline"
-              onClick={() => {
-                setOpen(false);
-                resetForm();
-              }}
-              className="flex-1"
-            >
-              Cancel
-            </Button>
-            <Button type="submit" disabled={loading} className="flex-1">
-              {loading ? "Saving..." : formData.id ? "Update" : "Create"} Announcement
-            </Button>
-          </div>
-        </form>
+            <div className="space-y-2">
+              <Label htmlFor="message">Message *</Label>
+              <Textarea
+                id="message"
+                placeholder="Write your announcement message here..."
+                value={formData.message}
+                onChange={(e) => setFormData({ ...formData, message: e.target.value })}
+                rows={6}
+                required
+              />
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="link">Link (Optional)</Label>
+              <Input
+                id="link"
+                type="url"
+                placeholder="https://example.com"
+                value={formData.link}
+                onChange={(e) => setFormData({ ...formData, link: e.target.value })}
+              />
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="event">Related Event (Optional)</Label>
+              <Select
+                value={formData.eventId}
+                onValueChange={(value) => setFormData({ ...formData, eventId: value })}
+                disabled={eventsError !== null}
+              >
+                <SelectTrigger id="event">
+                  <SelectValue placeholder={eventsError ? "Events unavailable" : "Select an event"} />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="">None</SelectItem>
+                  {events.map((event) => (
+                    <SelectItem key={event.id} value={event.id}>
+                      {event.title}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+              {eventsError && (
+                <p className="text-xs text-muted-foreground">
+                  Events couldn't be loaded, but you can still create announcements
+                </p>
+              )}
+            </div>
+
+            <div className="flex items-center justify-between p-4 rounded-lg bg-secondary/50">
+              <div className="space-y-0.5">
+                <Label htmlFor="important" className="cursor-pointer">
+                  Mark as Important
+                </Label>
+                <p className="text-xs text-muted-foreground">
+                  Important announcements are highlighted and pinned
+                </p>
+              </div>
+              <Switch
+                id="important"
+                checked={formData.isImportant}
+                onCheckedChange={(checked) => 
+                  setFormData({ ...formData, isImportant: checked })
+                }
+              />
+            </div>
+
+            <div className="flex gap-2 pt-4">
+              <Button
+                type="button"
+                variant="outline"
+                onClick={() => {
+                  setOpen(false);
+                  resetForm();
+                }}
+                className="flex-1"
+              >
+                Cancel
+              </Button>
+              <Button type="submit" disabled={loading} className="flex-1">
+                {loading ? (
+                  <>
+                    <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                    Saving...
+                  </>
+                ) : (
+                  `${formData.id ? "Update" : "Create"} Announcement`
+                )}
+              </Button>
+            </div>
+          </form>
+        )}
       </DialogContent>
     </Dialog>
   );
