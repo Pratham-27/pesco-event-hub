@@ -16,6 +16,7 @@ import { Plus, Pencil, Trash2, Calendar } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { AdminAnalytics } from "@/components/AdminAnalytics";
 import { EventRegistrations } from "@/components/EventRegistrations";
+import { LoadingSpinner } from "@/components/ui/loading-spinner";
 
 interface Event {
   id: string;
@@ -49,6 +50,7 @@ const AdminDashboard = () => {
     location: string;
     category: "Technical" | "Competition" | "Workshop" | "Cultural" | "Industrial Visit";
     max_attendees: number;
+    status: "upcoming" | "live" | "completed" | "cancelled";
     featured: boolean;
   }>({
     title: "",
@@ -58,6 +60,7 @@ const AdminDashboard = () => {
     location: "",
     category: "Technical",
     max_attendees: 100,
+    status: "upcoming",
     featured: false,
   });
 
@@ -171,6 +174,7 @@ const AdminDashboard = () => {
       location: event.location,
       category: event.category as "Technical" | "Competition" | "Workshop" | "Cultural" | "Industrial Visit",
       max_attendees: event.max_attendees,
+      status: event.status as "upcoming" | "live" | "completed" | "cancelled",
       featured: event.featured,
     });
     setDialogOpen(true);
@@ -207,12 +211,13 @@ const AdminDashboard = () => {
       location: "",
       category: "Technical",
       max_attendees: 100,
+      status: "upcoming",
       featured: false,
     });
   };
 
   if (loading) {
-    return <div className="min-h-screen bg-background flex items-center justify-center">Loading...</div>;
+    return <LoadingSpinner />;
   }
 
   if (!isAdmin) {
@@ -344,6 +349,24 @@ const AdminDashboard = () => {
                   </div>
                 </div>
 
+                <div className="space-y-2">
+                  <Label htmlFor="status">Event Status</Label>
+                  <Select
+                    value={formData.status}
+                    onValueChange={(value: "upcoming" | "live" | "completed" | "cancelled") => setFormData({ ...formData, status: value })}
+                  >
+                    <SelectTrigger>
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="upcoming">Upcoming</SelectItem>
+                      <SelectItem value="live">Live</SelectItem>
+                      <SelectItem value="completed">Completed</SelectItem>
+                      <SelectItem value="cancelled">Cancelled</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+
                 <div className="flex items-center space-x-2">
                   <input
                     type="checkbox"
@@ -382,6 +405,16 @@ const AdminDashboard = () => {
                         <Badge className="bg-accent text-accent-foreground">Featured</Badge>
                       )}
                       <Badge variant="outline">{event.category}</Badge>
+                      <Badge 
+                        variant={event.status === "live" ? "default" : "secondary"}
+                        className={
+                          event.status === "live" ? "bg-green-500 text-white" :
+                          event.status === "completed" ? "bg-blue-500 text-white" :
+                          event.status === "cancelled" ? "bg-red-500 text-white" : ""
+                        }
+                      >
+                        {event.status.charAt(0).toUpperCase() + event.status.slice(1)}
+                      </Badge>
                     </div>
                     <CardDescription>{event.description}</CardDescription>
                   </div>

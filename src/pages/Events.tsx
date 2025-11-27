@@ -25,6 +25,7 @@ interface Event {
   category: string;
   current_attendees: number;
   max_attendees: number;
+  status: string;
   featured: boolean;
 }
 
@@ -61,7 +62,22 @@ const Events = () => {
     setLoading(false);
   };
 
-  const filteredEvents = events.filter((event) => {
+  const upcomingEvents = events.filter((event) => 
+    event.status === "upcoming" || event.status === "live"
+  );
+
+  const pastEvents = events.filter((event) => 
+    event.status === "completed" || event.status === "cancelled"
+  );
+
+  const filteredUpcomingEvents = upcomingEvents.filter((event) => {
+    const matchesSearch = event.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      event.description.toLowerCase().includes(searchQuery.toLowerCase());
+    const matchesCategory = selectedCategory === "all" || event.category === selectedCategory;
+    return matchesSearch && matchesCategory;
+  });
+
+  const filteredPastEvents = pastEvents.filter((event) => {
     const matchesSearch = event.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
       event.description.toLowerCase().includes(searchQuery.toLowerCase());
     const matchesCategory = selectedCategory === "all" || event.category === selectedCategory;
@@ -113,48 +129,79 @@ const Events = () => {
           </div>
         </div>
 
-        {/* Results Count */}
-        <div className="mb-6 text-sm text-muted-foreground animate-fade-in">
-          Showing {filteredEvents.length} event{filteredEvents.length !== 1 ? "s" : ""}
-        </div>
-
-        {/* Events Grid */}
         {loading ? (
           <div className="text-center py-16">
             <p className="text-muted-foreground">Loading events...</p>
           </div>
         ) : (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {filteredEvents.map((event, index) => (
-              <div
-                key={event.id}
-                className="animate-fade-in"
-                style={{ animationDelay: `${index * 0.1}s` }}
-              >
-                <EventCard {...event} onRegistrationChange={fetchEvents} />
+          <>
+            {/* Upcoming Events Section */}
+            {filteredUpcomingEvents.length > 0 && (
+              <div className="mb-12">
+                <h2 className="text-2xl md:text-3xl font-bold mb-6 animate-fade-in">
+                  Upcoming Events
+                </h2>
+                <div className="mb-6 text-sm text-muted-foreground animate-fade-in">
+                  Showing {filteredUpcomingEvents.length} upcoming event{filteredUpcomingEvents.length !== 1 ? "s" : ""}
+                </div>
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                  {filteredUpcomingEvents.map((event, index) => (
+                    <div
+                      key={event.id}
+                      className="animate-fade-in"
+                      style={{ animationDelay: `${index * 0.1}s` }}
+                    >
+                      <EventCard {...event} onRegistrationChange={fetchEvents} />
+                    </div>
+                  ))}
+                </div>
               </div>
-            ))}
-          </div>
-        )}
+            )}
 
-        {filteredEvents.length === 0 && (
-          <div className="text-center py-16 animate-fade-in">
-            <div className="w-24 h-24 mx-auto mb-4 rounded-full bg-muted flex items-center justify-center">
-              <Search className="w-12 h-12 text-muted-foreground" />
-            </div>
-            <h3 className="text-xl font-semibold mb-2">No events found</h3>
-            <p className="text-muted-foreground">Try adjusting your search or filters</p>
-            <Button
-              variant="outline"
-              className="mt-4"
-              onClick={() => {
-                setSearchQuery("");
-                setSelectedCategory("all");
-              }}
-            >
-              Clear Filters
-            </Button>
-          </div>
+            {/* Past Events Section */}
+            {filteredPastEvents.length > 0 && (
+              <div>
+                <h2 className="text-2xl md:text-3xl font-bold mb-6 animate-fade-in">
+                  Past Events
+                </h2>
+                <div className="mb-6 text-sm text-muted-foreground animate-fade-in">
+                  Showing {filteredPastEvents.length} past event{filteredPastEvents.length !== 1 ? "s" : ""}
+                </div>
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                  {filteredPastEvents.map((event, index) => (
+                    <div
+                      key={event.id}
+                      className="animate-fade-in"
+                      style={{ animationDelay: `${index * 0.1}s` }}
+                    >
+                      <EventCard {...event} onRegistrationChange={fetchEvents} />
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {/* No Events Found */}
+            {filteredUpcomingEvents.length === 0 && filteredPastEvents.length === 0 && (
+              <div className="text-center py-16 animate-fade-in">
+                <div className="w-24 h-24 mx-auto mb-4 rounded-full bg-muted flex items-center justify-center">
+                  <Search className="w-12 h-12 text-muted-foreground" />
+                </div>
+                <h3 className="text-xl font-semibold mb-2">No events found</h3>
+                <p className="text-muted-foreground">Try adjusting your search or filters</p>
+                <Button
+                  variant="outline"
+                  className="mt-4"
+                  onClick={() => {
+                    setSearchQuery("");
+                    setSelectedCategory("all");
+                  }}
+                >
+                  Clear Filters
+                </Button>
+              </div>
+            )}
+          </>
         )}
       </main>
     </div>
