@@ -38,7 +38,7 @@ const Login = () => {
     
     toast({
       title: "Success!",
-      description: "Login successful. Welcome to Event Hub!",
+      description: "Login successful. Welcome to PESCOE EVENT HUB!",
     });
     
     navigate("/community");

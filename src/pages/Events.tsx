@@ -125,7 +125,7 @@ const Events = () => {
             All Events
           </h1>
           <p className="text-lg text-muted-foreground">
-            Discover and register for upcoming events at PESCOP
+            Discover and register for upcoming events at PESCOE
           </p>
         </div>
 

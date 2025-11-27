@@ -41,7 +41,7 @@ const handler = async (req: Request): Promise<Response> => {
         'Authorization': `Bearer ${RESEND_API_KEY}`,
       },
       body: JSON.stringify({
-        from: 'PESCOE Event Hub <onboarding@resend.dev>',
+        from: 'PESCOE EVENT HUB <onboarding@resend.dev>',
         to: [userEmail],
         subject: `Registration Confirmed: ${eventTitle}`,
         html: `
@@ -58,7 +58,7 @@ const handler = async (req: Request): Promise<Response> => {
             </div>
             
             <p>We look forward to seeing you at the event!</p>
-            <p>Best regards,<br>The PESCOE Event Hub Team</p>
+            <p>Best regards,<br>The PESCOE EVENT HUB Team</p>
           </div>
         `,
       }),
