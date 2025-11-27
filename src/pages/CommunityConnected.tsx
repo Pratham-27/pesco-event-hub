@@ -143,7 +143,7 @@ const CommunityConnected = () => {
             <CardContent className="pt-6">
               <div className="text-center">
                 <p className="text-destructive mb-4">Unable to load your profile. Please complete your profile setup.</p>
-                <Button onClick={() => navigate("/dashboard")}>Go to Dashboard</Button>
+                <Button onClick={() => navigate("/profile")}>Go to Profile</Button>
               </div>
             </CardContent>
           </Card>
