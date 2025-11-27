@@ -288,27 +288,20 @@ const Auth = () => {
     
     try {
       const { error } = await supabase.auth.resetPasswordForEmail(resetEmail, {
-        redirectTo: `${window.location.origin}/auth?type=recovery`,
+        redirectTo: `${window.location.origin}/auth`,
       });
 
       if (error) throw error;
 
-      // Call edge function to send custom email
-      await supabase.functions.invoke('send-password-reset', {
-        body: {
-          email: resetEmail,
-          resetLink: `${window.location.origin}/auth?type=recovery`,
-        },
-      });
-
       toast({
         title: "Reset Email Sent",
-        description: "Check your email for password reset instructions",
+        description: "Check your email for password reset instructions. The link will expire in 1 hour.",
       });
       
       setShowResetPassword(false);
       setResetEmail("");
     } catch (error: any) {
+      console.error("Password reset error:", error);
       toast({
         title: "Error",
         description: error.message || "Failed to send reset email",
