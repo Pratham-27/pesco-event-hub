@@ -229,7 +229,7 @@ const CommunityConnected = () => {
         title: newAnnouncement.title.trim(),
         message: newAnnouncement.message.trim(),
         link: newAnnouncement.link.trim() || null,
-        event_id: newAnnouncement.eventId || null,
+        event_id: newAnnouncement.eventId && newAnnouncement.eventId !== "none" ? newAnnouncement.eventId : null,
         is_important: newAnnouncement.isImportant,
         created_by: user.id,
       };
@@ -481,14 +481,14 @@ const CommunityConnected = () => {
                     <div className="space-y-2">
                       <Label htmlFor="ann-event">Related Event (Optional)</Label>
                       <Select
-                        value={newAnnouncement.eventId}
-                        onValueChange={(value) => setNewAnnouncement({ ...newAnnouncement, eventId: value })}
+                        value={newAnnouncement.eventId || "none"}
+                        onValueChange={(value) => setNewAnnouncement({ ...newAnnouncement, eventId: value === "none" ? "" : value })}
                       >
                         <SelectTrigger id="ann-event">
                           <SelectValue placeholder="Select an event" />
                         </SelectTrigger>
                         <SelectContent>
-                          <SelectItem value="">None</SelectItem>
+                          <SelectItem value="none">None</SelectItem>
                           {events.map((event: any) => (
                             <SelectItem key={event.id} value={event.id}>
                               {event.title}
