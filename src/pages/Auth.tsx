@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -53,9 +53,17 @@ const adminSignUpSchema = z.object({
 const Auth = () => {
   const navigate = useNavigate();
   const { toast } = useToast();
-  const { signUp, signIn } = useAuth();
+  const { signUp, signIn, user } = useAuth();
   const [loading, setLoading] = useState(false);
   const [loginType, setLoginType] = useState<"student" | "admin">("student");
+
+  // Redirect authenticated users to home page
+  useEffect(() => {
+    if (user) {
+      console.log("User authenticated, redirecting to home:", user);
+      navigate("/", { replace: true });
+    }
+  }, [user, navigate]);
   
   const [signUpData, setSignUpData] = useState({
     name: "",
@@ -246,7 +254,7 @@ const Auth = () => {
     const { error } = await supabase.auth.signInWithOAuth({
       provider: 'google',
       options: {
-        redirectTo: `${window.location.origin}/community`,
+        redirectTo: `${window.location.origin}/auth`,
       },
     });
 
@@ -258,6 +266,7 @@ const Auth = () => {
       });
       setLoading(false);
     }
+    // Note: Don't set loading to false on success - user will be redirected
   };
 
   return (
