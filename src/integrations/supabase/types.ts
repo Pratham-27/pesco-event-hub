@@ -14,6 +14,50 @@ export type Database = {
   }
   public: {
     Tables: {
+      announcements: {
+        Row: {
+          created_at: string
+          created_by: string
+          event_id: string | null
+          id: string
+          is_important: boolean
+          link: string | null
+          message: string
+          title: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          created_by: string
+          event_id?: string | null
+          id?: string
+          is_important?: boolean
+          link?: string | null
+          message: string
+          title: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          created_by?: string
+          event_id?: string | null
+          id?: string
+          is_important?: boolean
+          link?: string | null
+          message?: string
+          title?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "announcements_event_id_fkey"
+            columns: ["event_id"]
+            isOneToOne: false
+            referencedRelation: "events"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       community_discussions: {
         Row: {
           author_id: string
