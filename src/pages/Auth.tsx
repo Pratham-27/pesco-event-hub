@@ -56,6 +56,9 @@ const Auth = () => {
   const { signUp, signIn, user } = useAuth();
   const [loading, setLoading] = useState(false);
   const [loginType, setLoginType] = useState<"student" | "admin">("student");
+  const [showResetPassword, setShowResetPassword] = useState(false);
+  const [resetEmail, setResetEmail] = useState("");
+  const [resetLoading, setResetLoading] = useState(false);
 
   // Redirect authenticated users to home page
   useEffect(() => {
@@ -269,6 +272,53 @@ const Auth = () => {
     // Note: Don't set loading to false on success - user will be redirected
   };
 
+  const handleResetPassword = async (e: React.FormEvent) => {
+    e.preventDefault();
+    
+    if (!resetEmail || !z.string().email().safeParse(resetEmail).success) {
+      toast({
+        title: "Invalid Email",
+        description: "Please enter a valid email address",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    setResetLoading(true);
+    
+    try {
+      const { error } = await supabase.auth.resetPasswordForEmail(resetEmail, {
+        redirectTo: `${window.location.origin}/auth?type=recovery`,
+      });
+
+      if (error) throw error;
+
+      // Call edge function to send custom email
+      await supabase.functions.invoke('send-password-reset', {
+        body: {
+          email: resetEmail,
+          resetLink: `${window.location.origin}/auth?type=recovery`,
+        },
+      });
+
+      toast({
+        title: "Reset Email Sent",
+        description: "Check your email for password reset instructions",
+      });
+      
+      setShowResetPassword(false);
+      setResetEmail("");
+    } catch (error: any) {
+      toast({
+        title: "Error",
+        description: error.message || "Failed to send reset email",
+        variant: "destructive",
+      });
+    } finally {
+      setResetLoading(false);
+    }
+  };
+
   return (
     <div className="min-h-screen bg-background">
       <CollegeHeader />
@@ -337,6 +387,17 @@ const Auth = () => {
                         {loading ? "Signing in..." : "Sign In"}
                         <ArrowRight className="w-4 h-4 ml-2 group-hover:translate-x-1 transition-transform" />
                       </Button>
+
+                      <div className="text-center">
+                        <Button
+                          type="button"
+                          variant="link"
+                          className="text-sm text-primary hover:underline"
+                          onClick={() => setShowResetPassword(true)}
+                        >
+                          Forgot Password?
+                        </Button>
+                      </div>
 
                       <div className="relative my-4">
                         <Separator />
@@ -490,6 +551,51 @@ const Auth = () => {
               </Tabs>
             </CardContent>
           </Card>
+
+          {/* Password Reset Dialog */}
+          {showResetPassword && (
+            <Card className="animate-fade-in mt-6">
+              <CardHeader>
+                <CardTitle className="text-xl">Reset Password</CardTitle>
+                <CardDescription>
+                  Enter your email address and we'll send you instructions to reset your password
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                <form onSubmit={handleResetPassword} className="space-y-4">
+                  <div className="space-y-2">
+                    <Label htmlFor="reset-email">Email Address</Label>
+                    <Input
+                      id="reset-email"
+                      type="email"
+                      placeholder="Enter your email"
+                      value={resetEmail}
+                      onChange={(e) => setResetEmail(e.target.value)}
+                      required
+                    />
+                  </div>
+
+                  <div className="flex gap-2">
+                    <Button
+                      type="button"
+                      variant="outline"
+                      className="flex-1"
+                      onClick={() => {
+                        setShowResetPassword(false);
+                        setResetEmail("");
+                      }}
+                      disabled={resetLoading}
+                    >
+                      Cancel
+                    </Button>
+                    <Button type="submit" className="flex-1" disabled={resetLoading}>
+                      {resetLoading ? "Sending..." : "Send Reset Link"}
+                    </Button>
+                  </div>
+                </form>
+              </CardContent>
+            </Card>
+          )}
         </div>
       </main>
     </div>
