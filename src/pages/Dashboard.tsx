@@ -23,6 +23,7 @@ interface Event {
   status: string;
   current_attendees: number;
   max_attendees: number;
+  registration_open: boolean;
 }
 
 const Dashboard = () => {
