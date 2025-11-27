@@ -29,6 +29,7 @@ interface Event {
   max_attendees: number;
   status: string;
   featured: boolean;
+  registration_open: boolean;
 }
 
 const Events = () => {

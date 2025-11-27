@@ -174,6 +174,7 @@ export type Database = {
           id: string
           location: string
           max_attendees: number
+          registration_open: boolean
           status: Database["public"]["Enums"]["event_status"]
           time: string
           title: string
@@ -190,6 +191,7 @@ export type Database = {
           id?: string
           location: string
           max_attendees: number
+          registration_open?: boolean
           status?: Database["public"]["Enums"]["event_status"]
           time: string
           title: string
@@ -206,6 +208,7 @@ export type Database = {
           id?: string
           location?: string
           max_attendees?: number
+          registration_open?: boolean
           status?: Database["public"]["Enums"]["event_status"]
           time?: string
           title?: string

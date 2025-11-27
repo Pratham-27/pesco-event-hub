@@ -22,6 +22,7 @@ interface EventCardProps {
   featured?: boolean;
   onRegistrationChange?: () => void;
   disableRegistration?: boolean;
+  registration_open?: boolean;
 }
 
 const EventCard = ({
@@ -39,6 +40,7 @@ const EventCard = ({
   featured = false,
   onRegistrationChange,
   disableRegistration = false,
+  registration_open = true,
 }: EventCardProps) => {
   const { user } = useAuth();
   const { toast } = useToast();
@@ -167,6 +169,7 @@ const EventCard = ({
 
   const isFull = current_attendees >= max_attendees;
   const isCompleted = status === "completed" || status === "cancelled";
+  const isRegistrationClosed = !registration_open && status === "upcoming";
   
   return (
     <div className="group bg-card rounded-xl border border-border overflow-hidden hover:shadow-hover transition-all duration-300 hover:-translate-y-1">
@@ -220,11 +223,15 @@ const EventCard = ({
         </div>
 
         <div className="flex gap-2 pt-2">
-          {disableRegistration || isCompleted ? (
+          {disableRegistration || isCompleted || isRegistrationClosed ? (
             <div className="flex-1">
               {isCompleted ? (
                 <Button variant="outline" size="sm" className="w-full" disabled>
                   {status === "cancelled" ? "Event Cancelled" : "Event Completed"}
+                </Button>
+              ) : isRegistrationClosed ? (
+                <Button variant="outline" size="sm" className="w-full" disabled>
+                  Registrations Closed
                 </Button>
               ) : (
                 <Link to="/events" className="flex-1">

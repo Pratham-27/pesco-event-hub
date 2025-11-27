@@ -31,6 +31,7 @@ interface Event {
   current_attendees: number;
   status: string;
   featured: boolean;
+  registration_open: boolean;
 }
 
 const AdminDashboard = () => {
@@ -53,6 +54,7 @@ const AdminDashboard = () => {
     max_attendees: number;
     status: "upcoming" | "live" | "completed" | "cancelled";
     featured: boolean;
+    registration_open: boolean;
   }>({
     title: "",
     description: "",
@@ -63,6 +65,7 @@ const AdminDashboard = () => {
     max_attendees: 100,
     status: "upcoming",
     featured: false,
+    registration_open: true,
   });
 
   useEffect(() => {
@@ -197,6 +200,7 @@ const AdminDashboard = () => {
       max_attendees: event.max_attendees,
       status: event.status as "upcoming" | "live" | "completed" | "cancelled",
       featured: event.featured,
+      registration_open: event.registration_open,
     });
     setDialogOpen(true);
   };
@@ -234,6 +238,7 @@ const AdminDashboard = () => {
       max_attendees: 100,
       status: "upcoming",
       featured: false,
+      registration_open: true,
     });
   };
 
@@ -398,6 +403,17 @@ const AdminDashboard = () => {
                     className="w-4 h-4"
                   />
                   <Label htmlFor="featured">Featured Event</Label>
+                </div>
+
+                <div className="flex items-center space-x-2">
+                  <input
+                    type="checkbox"
+                    id="registration_open"
+                    checked={formData.registration_open}
+                    onChange={(e) => setFormData({ ...formData, registration_open: e.target.checked })}
+                    className="w-4 h-4"
+                  />
+                  <Label htmlFor="registration_open">Registration Open</Label>
                 </div>
 
                 <DialogFooter>
