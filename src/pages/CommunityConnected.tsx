@@ -13,6 +13,7 @@ import { useAuth } from "@/hooks/useAuth";
 import { supabase } from "@/integrations/supabase/client";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { z } from "zod";
+import { LoadingSpinner } from "@/components/ui/loading-spinner";
 
 const postSchema = z.object({
   title: z.string().trim().min(5, "Title must be at least 5 characters").max(200, "Title must be less than 200 characters"),
@@ -53,7 +54,7 @@ const CommunityConnected = () => {
   });
 
   // Fetch discussions
-  const { data: discussions = [] } = useQuery({
+  const { data: discussions = [], isLoading: discussionsLoading } = useQuery({
     queryKey: ["discussions"],
     queryFn: async () => {
       const { data, error } = await supabase
@@ -67,6 +68,8 @@ const CommunityConnected = () => {
       if (error) throw error;
       return data;
     },
+    staleTime: 30000, // Cache for 30 seconds
+    refetchOnWindowFocus: false,
   });
 
   // Create discussion mutation
@@ -125,16 +128,8 @@ const CommunityConnected = () => {
   if (!user) return null;
 
   // Show loading state while profile is being fetched
-  if (profileLoading) {
-    return (
-      <div className="min-h-screen bg-background">
-        <CollegeHeader />
-        <Navigation />
-        <main className="container mx-auto px-4 py-8">
-          <div className="text-center">Loading...</div>
-        </main>
-      </div>
-    );
+  if (profileLoading || discussionsLoading) {
+    return <LoadingSpinner />;
   }
 
   // Show error if profile fetch fails
