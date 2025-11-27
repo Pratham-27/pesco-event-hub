@@ -223,23 +223,28 @@ const AdminDashboard = () => {
       <Navigation />
 
       <main className="container mx-auto px-4 py-8">
-        <div className="mb-8 animate-fade-in flex justify-between items-center">
-          <div>
-            <h1 className="text-4xl md:text-5xl font-bold bg-gradient-to-r from-primary to-accent bg-clip-text text-transparent mb-3">
-              Admin Dashboard
-            </h1>
-            <p className="text-lg text-muted-foreground">Manage college events</p>
-          </div>
-          <Dialog open={dialogOpen} onOpenChange={(open) => {
-            setDialogOpen(open);
-            if (!open) resetForm();
-          }}>
-            <DialogTrigger asChild>
-              <Button size="lg" className="gap-2">
-                <Plus className="w-5 h-5" />
-                Add Event
+        <div className="mb-8 animate-fade-in">
+          <div className="flex justify-between items-start mb-6">
+            <div>
+              <h1 className="text-4xl md:text-5xl font-bold bg-gradient-to-r from-primary to-accent bg-clip-text text-transparent mb-3">
+                Admin Dashboard
+              </h1>
+              <p className="text-lg text-muted-foreground">Manage college events</p>
+            </div>
+            <div className="flex gap-3">
+              <Button variant="outline" onClick={() => navigate("/admin/users")}>
+                Manage Users
               </Button>
-            </DialogTrigger>
+              <Dialog open={dialogOpen} onOpenChange={(open) => {
+                setDialogOpen(open);
+                if (!open) resetForm();
+              }}>
+                <DialogTrigger asChild>
+                  <Button size="lg" className="gap-2">
+                    <Plus className="w-5 h-5" />
+                    Add Event
+                  </Button>
+                </DialogTrigger>
             <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
               <DialogHeader>
                 <DialogTitle>{editingEvent ? "Edit Event" : "Create New Event"}</DialogTitle>
@@ -354,6 +359,8 @@ const AdminDashboard = () => {
               </form>
             </DialogContent>
           </Dialog>
+            </div>
+          </div>
         </div>
 
         <div className="grid gap-4">
