@@ -94,18 +94,40 @@ const EventCard = ({
         description: "Failed to register for event",
         variant: "destructive",
       });
-    } else {
-      // Update attendee count
-      await supabase.rpc("increment_event_attendees" as any, { event_id: id });
-      
-      toast({
-        title: "Success",
-        description: "Successfully registered for event!",
-      });
-      setIsRegistered(true);
-      onRegistrationChange?.();
+      setLoading(false);
+      return;
     }
 
+    // Update attendee count
+    await supabase.rpc("increment_event_attendees" as any, { event_id: id });
+
+    // Get user profile for email
+    const { data: profile } = await supabase
+      .from("profiles")
+      .select("name, email")
+      .eq("id", user.id)
+      .single();
+
+    // Send registration email
+    if (profile) {
+      supabase.functions.invoke("send-registration-email", {
+        body: {
+          userEmail: profile.email,
+          userName: profile.name,
+          eventTitle: title,
+          eventDate: date,
+          eventTime: time,
+          eventLocation: location,
+        },
+      }).catch((err) => console.error("Email error:", err));
+    }
+
+    toast({
+      title: "Success",
+      description: "Successfully registered! Check your email for confirmation.",
+    });
+    setIsRegistered(true);
+    onRegistrationChange?.();
     setLoading(false);
   };
 
