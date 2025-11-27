@@ -11,7 +11,8 @@ import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/hooks/useAuth";
 import { supabase } from "@/integrations/supabase/client";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { User, Loader2, LogOut } from "lucide-react";
+import { User, LogOut } from "lucide-react";
+import { LoadingSpinner } from "@/components/ui/loading-spinner";
 
 const Profile = () => {
   const navigate = useNavigate();
@@ -48,17 +49,17 @@ const Profile = () => {
 
   // Update form data when profile loads
   useEffect(() => {
-    if (profile) {
+    if (profile && user) {
       setFormData({
         name: profile.name || "",
         mobile: profile.mobile || "",
-        email: profile.email || "",
+        email: user.email || profile.email || "",
         year: profile.year || "",
         semester: profile.semester || "",
         course: profile.course || "",
       });
     }
-  }, [profile]);
+  }, [profile, user]);
 
   const updateProfile = useMutation({
     mutationFn: async (data: typeof formData) => {
@@ -114,17 +115,7 @@ const Profile = () => {
   }
 
   if (isLoading) {
-    return (
-      <div className="min-h-screen bg-background">
-        <CollegeHeader />
-        <Navigation />
-        <main className="container mx-auto px-4 py-12">
-          <div className="flex items-center justify-center">
-            <Loader2 className="w-8 h-8 animate-spin text-primary" />
-          </div>
-        </main>
-      </div>
-    );
+    return <LoadingSpinner />;
   }
 
   return (
