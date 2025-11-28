@@ -130,20 +130,38 @@ const CommunityConnected = () => {
     staleTime: 30000,
   });
 
-  // Fetch discussions
+  // Fetch discussions with author profiles
   const { data: discussions = [], isLoading: discussionsLoading } = useQuery({
     queryKey: ["discussions"],
     queryFn: async () => {
-      const { data, error } = await supabase
+      // First fetch all discussions
+      const { data: discussionsData, error: discussionsError } = await supabase
         .from("community_discussions")
-        .select(`
-          *,
-          profiles:author_id (name, year)
-        `)
+        .select("*")
         .order("created_at", { ascending: false });
       
-      if (error) throw error;
-      return data;
+      if (discussionsError) throw discussionsError;
+      if (!discussionsData || discussionsData.length === 0) return [];
+
+      // Get all unique author IDs
+      const authorIds = [...new Set(discussionsData.map(d => d.author_id))];
+      
+      // Fetch all author profiles
+      const { data: profilesData, error: profilesError } = await supabase
+        .from("profiles")
+        .select("id, name, year")
+        .in("id", authorIds);
+      
+      if (profilesError) throw profilesError;
+
+      // Create a map of profiles by ID for quick lookup
+      const profilesMap = new Map(profilesData?.map(p => [p.id, p]) || []);
+
+      // Merge discussions with their author profiles
+      return discussionsData.map(discussion => ({
+        ...discussion,
+        profiles: profilesMap.get(discussion.author_id) || { name: "Unknown", year: "" }
+      }));
     },
     staleTime: 30000,
     refetchOnWindowFocus: true,
