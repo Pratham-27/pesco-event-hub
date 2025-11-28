@@ -146,8 +146,30 @@ const CommunityConnected = () => {
       return data;
     },
     staleTime: 30000,
-    refetchOnWindowFocus: false,
+    refetchOnWindowFocus: true,
   });
+
+  // Real-time subscription for discussions
+  useEffect(() => {
+    const channel = supabase
+      .channel('community-discussions-changes')
+      .on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table: 'community_discussions'
+        },
+        () => {
+          queryClient.invalidateQueries({ queryKey: ["discussions"] });
+        }
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, [queryClient]);
 
   // Create discussion mutation
   const createDiscussion = useMutation({
