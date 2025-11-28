@@ -98,6 +98,35 @@ export type Database = {
         }
         Relationships: []
       }
+      discussion_likes: {
+        Row: {
+          created_at: string | null
+          discussion_id: string
+          id: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string | null
+          discussion_id: string
+          id?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string | null
+          discussion_id?: string
+          id?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "discussion_likes_discussion_id_fkey"
+            columns: ["discussion_id"]
+            isOneToOne: false
+            referencedRelation: "community_discussions"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       discussion_replies: {
         Row: {
           author_id: string

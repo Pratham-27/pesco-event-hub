@@ -45,6 +45,8 @@ const CommunityConnected = () => {
   const [editingAnnouncement, setEditingAnnouncement] = useState<any>(null);
   const [lastVisit, setLastVisit] = useState<string | null>(null);
   const [savingAnnouncement, setSavingAnnouncement] = useState(false);
+  const [expandedDiscussions, setExpandedDiscussions] = useState<Set<string>>(new Set());
+  const [replyTexts, setReplyTexts] = useState<Record<string, string>>({});
 
   useEffect(() => {
     if (!user) {
@@ -167,9 +169,59 @@ const CommunityConnected = () => {
     refetchOnWindowFocus: true,
   });
 
-  // Real-time subscription for discussions
+  // Fetch likes for all discussions
+  const { data: allLikes = [] } = useQuery({
+    queryKey: ["discussion-likes"],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("discussion_likes")
+        .select("*");
+      
+      if (error) throw error;
+      return data || [];
+    },
+    staleTime: 10000,
+  });
+
+  // Fetch replies for all discussions
+  const { data: allReplies = [] } = useQuery({
+    queryKey: ["discussion-replies"],
+    queryFn: async () => {
+      // First fetch all replies
+      const { data: repliesData, error: repliesError } = await supabase
+        .from("discussion_replies")
+        .select("*")
+        .order("created_at", { ascending: true });
+      
+      if (repliesError) throw repliesError;
+      if (!repliesData || repliesData.length === 0) return [];
+
+      // Get all unique author IDs
+      const authorIds = [...new Set(repliesData.map(r => r.author_id))];
+      
+      // Fetch all author profiles
+      const { data: profilesData, error: profilesError } = await supabase
+        .from("profiles")
+        .select("id, name")
+        .in("id", authorIds);
+      
+      if (profilesError) throw profilesError;
+
+      // Create a map of profiles by ID
+      const profilesMap = new Map(profilesData?.map(p => [p.id, p]) || []);
+
+      // Merge replies with their author profiles
+      return repliesData.map(reply => ({
+        ...reply,
+        author_name: profilesMap.get(reply.author_id)?.name || "Unknown"
+      }));
+    },
+    staleTime: 10000,
+  });
+
+  // Real-time subscriptions
   useEffect(() => {
-    const channel = supabase
+    const discussionsChannel = supabase
       .channel('community-discussions-changes')
       .on(
         'postgres_changes',
@@ -184,8 +236,40 @@ const CommunityConnected = () => {
       )
       .subscribe();
 
+    const likesChannel = supabase
+      .channel('discussion-likes-changes')
+      .on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table: 'discussion_likes'
+        },
+        () => {
+          queryClient.invalidateQueries({ queryKey: ["discussion-likes"] });
+        }
+      )
+      .subscribe();
+
+    const repliesChannel = supabase
+      .channel('discussion-replies-changes')
+      .on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table: 'discussion_replies'
+        },
+        () => {
+          queryClient.invalidateQueries({ queryKey: ["discussion-replies"] });
+        }
+      )
+      .subscribe();
+
     return () => {
-      supabase.removeChannel(channel);
+      supabase.removeChannel(discussionsChannel);
+      supabase.removeChannel(likesChannel);
+      supabase.removeChannel(repliesChannel);
     };
   }, [queryClient]);
 
@@ -239,6 +323,137 @@ const CommunityConnected = () => {
       title: validationResult.data.title,
       description: validationResult.data.description,
     });
+  };
+
+  // Like/Unlike functionality
+  const handleToggleLike = async (discussionId: string) => {
+    if (!user) {
+      toast({
+        title: "Error",
+        description: "You must be logged in to like posts",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    const existingLike = allLikes.find(
+      like => like.discussion_id === discussionId && like.user_id === user.id
+    );
+
+    try {
+      if (existingLike) {
+        // Unlike
+        const { error } = await supabase
+          .from("discussion_likes")
+          .delete()
+          .eq("id", existingLike.id);
+
+        if (error) throw error;
+      } else {
+        // Like
+        const { error } = await supabase
+          .from("discussion_likes")
+          .insert({
+            discussion_id: discussionId,
+            user_id: user.id,
+          });
+
+        if (error) throw error;
+      }
+
+      queryClient.invalidateQueries({ queryKey: ["discussion-likes"] });
+    } catch (error: any) {
+      toast({
+        title: "Error",
+        description: error.message || "Failed to update like",
+        variant: "destructive",
+      });
+    }
+  };
+
+  // Reply functionality
+  const handleSubmitReply = async (discussionId: string) => {
+    if (!user) {
+      toast({
+        title: "Error",
+        description: "You must be logged in to reply",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    const replyText = replyTexts[discussionId]?.trim();
+    if (!replyText || replyText.length === 0) {
+      toast({
+        title: "Error",
+        description: "Reply cannot be empty",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    if (replyText.length > 1000) {
+      toast({
+        title: "Error",
+        description: "Reply must be less than 1000 characters",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    try {
+      const { error } = await supabase
+        .from("discussion_replies")
+        .insert({
+          discussion_id: discussionId,
+          author_id: user.id,
+          content: replyText,
+        });
+
+      if (error) throw error;
+
+      setReplyTexts({ ...replyTexts, [discussionId]: "" });
+      queryClient.invalidateQueries({ queryKey: ["discussion-replies"] });
+      
+      toast({
+        title: "Success!",
+        description: "Reply posted successfully",
+      });
+    } catch (error: any) {
+      toast({
+        title: "Error",
+        description: error.message || "Failed to post reply",
+        variant: "destructive",
+      });
+    }
+  };
+
+  // Toggle discussion expansion
+  const toggleDiscussion = (discussionId: string) => {
+    const newExpanded = new Set(expandedDiscussions);
+    if (newExpanded.has(discussionId)) {
+      newExpanded.delete(discussionId);
+    } else {
+      newExpanded.add(discussionId);
+    }
+    setExpandedDiscussions(newExpanded);
+  };
+
+  // Get like count for a discussion
+  const getLikeCount = (discussionId: string) => {
+    return allLikes.filter(like => like.discussion_id === discussionId).length;
+  };
+
+  // Check if current user liked a discussion
+  const isLikedByUser = (discussionId: string) => {
+    return allLikes.some(
+      like => like.discussion_id === discussionId && like.user_id === user?.id
+    );
+  };
+
+  // Get replies for a discussion
+  const getReplies = (discussionId: string) => {
+    return allReplies.filter(reply => reply.discussion_id === discussionId);
   };
 
   const handleCreateAnnouncement = async (e: React.FormEvent) => {
@@ -703,45 +918,115 @@ const CommunityConnected = () => {
               </Card>
             ) : (
               <div className="space-y-4">
-                {discussions.map((discussion: any, index) => (
-                  <Card 
-                    key={discussion.id} 
-                    className="animate-fade-in hover:shadow-lg transition-shadow cursor-pointer"
-                    style={{ animationDelay: `${index * 0.1}s` }}
-                  >
-                    <CardHeader>
-                      <div className="flex items-start justify-between">
-                        <div className="flex-1">
-                          <div className="flex items-center gap-3 mb-2">
-                            <div className="w-10 h-10 rounded-full bg-gradient-to-br from-primary to-accent flex items-center justify-center">
-                              <User className="w-5 h-5 text-white" />
+                {discussions.map((discussion: any, index) => {
+                  const likeCount = getLikeCount(discussion.id);
+                  const isLiked = isLikedByUser(discussion.id);
+                  const replies = getReplies(discussion.id);
+                  const isExpanded = expandedDiscussions.has(discussion.id);
+
+                  return (
+                    <Card 
+                      key={discussion.id} 
+                      className="animate-fade-in hover:shadow-lg transition-shadow"
+                      style={{ animationDelay: `${index * 0.1}s` }}
+                    >
+                      <CardHeader>
+                        <div className="flex items-start justify-between">
+                          <div className="flex-1">
+                            <div className="flex items-center gap-3 mb-2">
+                              <div className="w-10 h-10 rounded-full bg-gradient-to-br from-primary to-accent flex items-center justify-center">
+                                <User className="w-5 h-5 text-white" />
+                              </div>
+                              <div>
+                                <p className="font-semibold">{discussion.profiles?.name}</p>
+                                <p className="text-xs text-muted-foreground">
+                                  {discussion.profiles?.year} • {formatDate(discussion.created_at)}
+                                </p>
+                              </div>
                             </div>
-                            <div>
-                              <p className="font-semibold">{discussion.profiles?.name}</p>
-                              <p className="text-xs text-muted-foreground">
-                                {discussion.profiles?.year} • {formatDate(discussion.created_at)}
-                              </p>
+                            <CardTitle className="text-xl mb-2">{discussion.title}</CardTitle>
+                            <CardDescription className="text-base">{discussion.description}</CardDescription>
+                          </div>
+                        </div>
+                      </CardHeader>
+                      <CardContent>
+                        <div className="flex items-center gap-4 text-sm mb-4">
+                          <button 
+                            onClick={() => handleToggleLike(discussion.id)}
+                            className={`flex items-center gap-1 transition-colors ${
+                              isLiked ? 'text-primary font-semibold' : 'text-muted-foreground hover:text-primary'
+                            }`}
+                          >
+                            <ThumbsUp className={`w-4 h-4 ${isLiked ? 'fill-current' : ''}`} />
+                            {likeCount} {likeCount === 1 ? 'Like' : 'Likes'}
+                          </button>
+                          <button 
+                            onClick={() => toggleDiscussion(discussion.id)}
+                            className="flex items-center gap-1 text-muted-foreground hover:text-primary transition-colors"
+                          >
+                            <MessageSquare className="w-4 h-4" />
+                            {replies.length} {replies.length === 1 ? 'Reply' : 'Replies'}
+                          </button>
+                        </div>
+
+                        {/* Reply Section */}
+                        {isExpanded && (
+                          <div className="mt-4 space-y-4 border-t pt-4">
+                            {/* Replies List */}
+                            {replies.length > 0 && (
+                              <div className="space-y-3 mb-4">
+                                {replies.map((reply: any) => (
+                                  <div key={reply.id} className="bg-muted/50 rounded-lg p-3">
+                                    <div className="flex items-start gap-2 mb-1">
+                                      <div className="w-6 h-6 rounded-full bg-gradient-to-br from-primary/60 to-accent/60 flex items-center justify-center flex-shrink-0">
+                                        <User className="w-3 h-3 text-white" />
+                                      </div>
+                                      <div className="flex-1">
+                                        <p className="text-sm font-semibold">{reply.author_name}</p>
+                                        <p className="text-xs text-muted-foreground">
+                                          {formatDate(reply.created_at)}
+                                        </p>
+                                      </div>
+                                    </div>
+                                    <p className="text-sm ml-8">{reply.content}</p>
+                                  </div>
+                                ))}
+                              </div>
+                            )}
+
+                            {/* Reply Form */}
+                            <div className="space-y-2">
+                              <Label htmlFor={`reply-${discussion.id}`}>Add a reply</Label>
+                              <Textarea
+                                id={`reply-${discussion.id}`}
+                                placeholder="Share your thoughts..."
+                                value={replyTexts[discussion.id] || ""}
+                                onChange={(e) => setReplyTexts({ 
+                                  ...replyTexts, 
+                                  [discussion.id]: e.target.value 
+                                })}
+                                rows={3}
+                                maxLength={1000}
+                              />
+                              <div className="flex items-center justify-between">
+                                <p className="text-xs text-muted-foreground">
+                                  {(replyTexts[discussion.id] || "").length}/1000 characters
+                                </p>
+                                <Button
+                                  size="sm"
+                                  onClick={() => handleSubmitReply(discussion.id)}
+                                  disabled={!replyTexts[discussion.id]?.trim()}
+                                >
+                                  Post Reply
+                                </Button>
+                              </div>
                             </div>
                           </div>
-                          <CardTitle className="text-xl mb-2">{discussion.title}</CardTitle>
-                          <CardDescription className="text-base">{discussion.description}</CardDescription>
-                        </div>
-                      </div>
-                    </CardHeader>
-                    <CardContent>
-                      <div className="flex items-center gap-4 text-sm text-muted-foreground">
-                        <button className="flex items-center gap-1 hover:text-primary transition-colors">
-                          <ThumbsUp className="w-4 h-4" />
-                          {discussion.likes} Likes
-                        </button>
-                        <button className="flex items-center gap-1 hover:text-primary transition-colors">
-                          <MessageSquare className="w-4 h-4" />
-                          0 Replies
-                        </button>
-                      </div>
-                    </CardContent>
-                  </Card>
-                ))}
+                        )}
+                      </CardContent>
+                    </Card>
+                  );
+                })}
               </div>
             )}
           </TabsContent>
